@@ -21,6 +21,7 @@ Each works standalone. Together they form a complete trust-and-pay rail for auto
 - **Use case — hire an AI service agent:** https://mnorbert87.github.io/arc-agentic-stack/use-case/
 - **AgentBond:** https://mnorbert87.github.io/arc-agentic-stack/agent-bond/
 - **StreamPay:** https://mnorbert87.github.io/arc-agentic-stack/stream-pay/
+- **x402 pay-per-call demo (runnable):** [`x402-demo/`](./x402-demo/) — agent pays an API over HTTP `402`, settled per second on StreamPay. [Verified tx transcript](./x402-demo/SAMPLE_RUN.md).
 
 No backend. The frontends read live state straight from the public Arc RPC and write through MetaMask. Wallet not required to browse.
 
@@ -139,6 +140,25 @@ const { id } = await arc.createStream(CLIENT, "2", { durationSeconds: 3600, memo
 `node sdk/example.js` runs a read-only snapshot against live testnet (no key needed). Full API in
 [`sdk/README.md`](./sdk/README.md).
 
+### x402 pay-per-call demo
+
+[`x402-demo/`](./x402-demo/) shows the settlement layer driving a real machine-to-machine
+payment: an autonomous buyer agent pays an API **per request** over the
+[x402](https://www.x402.org/) pattern (HTTP `402 Payment Required`), with each call settled
+**on-chain in USDC on Arc** through StreamPay. The server opens nothing of its own — it
+`withdraw()`s the seconds that have vested to it and returns `200` **only after** the on-chain
+settlement lands, so the `402 → 200` transition is bound to a live payment.
+
+```bash
+cd x402-demo
+npm install
+cp .env.example .env        # two dedicated burner keys; .env is gitignored, never committed
+./run.sh                    # bootstrap → server → buyer agent → tee to demo-run.log
+```
+
+A verified end-to-end transcript with live arcscan links (committed 0.30 USDC, paid 0.17 for
+three calls, reclaimed 0.13) is in [`x402-demo/SAMPLE_RUN.md`](./x402-demo/SAMPLE_RUN.md).
+
 ---
 
 ## Circle Product Feedback
@@ -178,6 +198,7 @@ arc-agentic-stack/
 ├── use-case/               # "Hire an AI service agent" walkthrough (index.html)
 ├── sdk/                    # ethers v6 SDK (bond + stream in ~10 lines)
 ├── demo/                   # commerce-scenario.js — runnable end-to-end flow
+├── x402-demo/              # x402 pay-per-call API, settled per second on StreamPay
 └── contracts/              # Foundry projects (src, test, script)
 ```
 

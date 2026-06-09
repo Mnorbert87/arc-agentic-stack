@@ -1,0 +1,15 @@
+{
+  "name": "x402-pay-per-inference",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "x402 (HTTP 402) pay-per-inference demo settled on Arc with StreamPay.",
+  "scripts": {
+    "server": "node server.js",
+    "agent": "node agent.js",
+    "demo": "./run.sh"
+  },
+  "dependencies": {
+    "ethers": "^6.13.0"
+  }
+}
