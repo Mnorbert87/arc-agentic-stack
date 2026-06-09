@@ -18,6 +18,7 @@ Each works standalone. Together they form a complete trust-and-pay rail for auto
 ## Live demo
 
 - **Hub:** https://mnorbert87.github.io/arc-agentic-stack/
+- **Use case — hire an AI service agent:** https://mnorbert87.github.io/arc-agentic-stack/use-case/
 - **AgentBond:** https://mnorbert87.github.io/arc-agentic-stack/agent-bond/
 - **StreamPay:** https://mnorbert87.github.io/arc-agentic-stack/stream-pay/
 
@@ -174,7 +175,9 @@ arc-agentic-stack/
 ├── architecture.png        # the diagram above
 ├── agent-bond/             # AgentBond frontend (index.html)
 ├── stream-pay/             # StreamPay frontend (index.html)
+├── use-case/               # "Hire an AI service agent" walkthrough (index.html)
 ├── sdk/                    # ethers v6 SDK (bond + stream in ~10 lines)
+├── demo/                   # commerce-scenario.js — runnable end-to-end flow
 └── contracts/              # Foundry projects (src, test, script)
 ```
 

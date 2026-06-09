@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Use case · Hire an AI service agent — Arc Agentic Stack</title>
+<meta name="description" content="A concrete end-to-end commerce flow on Arc: Acme Corp hires Aiden, an AI research agent. Aiden bonds for trust (AgentBond), gets paid per second of work (StreamPay), and settles in USDC — reusing the live testnet contracts." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060912; --bg-2: #0a0f1e; --ink: #eef3fb; --muted: #8c98af; --faint: #525d72;
+    --line: rgba(255,255,255,0.065); --line-2: rgba(122,170,255,0.20);
+    --glass: rgba(255,255,255,0.022); --glass-2: rgba(255,255,255,0.05);
+    --c1: #4da2ff; --c2: #56cfe1; --c3: #2f6bff;
+    --good: #4fd6a8; --bad: #ff7a7a; --warn: #ffc266; --gold: #ffd479;
+    --r: 16px; --ease: cubic-bezier(.22,.61,.36,1); font-synthesis: none;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; } html { scroll-behavior: smooth; }
+  body { margin: 0; color: var(--ink); background: var(--bg);
+    font-family: "Inter", system-ui, sans-serif; -webkit-font-smoothing: antialiased; line-height: 1.55; overflow-x: hidden; }
+  ::selection { background: rgba(86,207,225,0.28); color: #fff; }
+  ::-webkit-scrollbar { width: 11px; height: 11px; }
+  ::-webkit-scrollbar-thumb { background: rgba(122,170,255,0.18); border-radius: 99px; border: 3px solid var(--bg); }
+  a { color: inherit; }
+
+  .aurora { position: fixed; inset: 0; z-index: -3; overflow: hidden;
+    background:
+      radial-gradient(1000px 560px at 50% -10%, rgba(77,162,255,0.20), transparent 60%),
+      radial-gradient(760px 540px at 88% 112%, rgba(47,107,255,0.16), transparent 60%),
+      radial-gradient(620px 480px at 8% 40%, rgba(86,207,225,0.10), transparent 60%),
+      var(--bg); }
+  .aurora::before { content: ""; position: absolute; width: 620px; height: 620px;
+    left: 50%; top: -140px; transform: translateX(-50%); border-radius: 50%;
+    background: radial-gradient(circle, rgba(86,207,225,0.26), transparent 62%);
+    filter: blur(80px); animation: pulse 13s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{ opacity:.5; transform:translateX(-50%) scale(1);} 50%{ opacity:.85; transform:translateX(-50%) scale(1.14);} }
+  .grain { position: fixed; inset: 0; z-index: -2; pointer-events: none; opacity: .45;
+    background-image: linear-gradient(rgba(122,170,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(122,170,255,0.05) 1px, transparent 1px);
+    background-size: 56px 56px; background-position: center;
+    -webkit-mask-image: radial-gradient(circle at 50% 22%, #000 0%, transparent 76%); mask-image: radial-gradient(circle at 50% 22%, #000 0%, transparent 76%); }
+
+  header { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 15px 30px; border-bottom: 1px solid var(--line); background: rgba(5,7,15,0.5); backdrop-filter: blur(20px) saturate(150%); }
+  .brand { display: flex; align-items: center; gap: 13px; }
+  .logo { width: 40px; height: 40px; border-radius: 12px; position: relative;
+    background: linear-gradient(135deg, var(--c1), var(--c2)); display: grid; place-items: center;
+    box-shadow: 0 8px 26px rgba(91,140,255,0.5), inset 0 0 0 1px rgba(255,255,255,0.25); }
+  .logo svg { width: 22px; height: 22px; }
+  .brand h1 { font-family: "Space Grotesk"; font-size: 17px; margin: 0; letter-spacing: -.2px; font-weight: 600; }
+  .brand small { color: var(--muted); font-size: 11.5px; }
+  .back { font-size: 13px; color: var(--muted); text-decoration: none; display: inline-flex; align-items: center; gap: 7px;
+    border: 1px solid var(--line); border-radius: 999px; padding: 9px 15px; background: var(--glass); transition: .18s; }
+  .back:hover { border-color: var(--line-2); color: var(--c2); }
+
+  main { max-width: 1000px; margin: 0 auto; padding: 52px 22px 90px; }
+  .rise { opacity: 0; transform: translateY(16px); animation: rise .7s var(--ease) forwards; }
+  .rise.d1 { animation-delay: .06s; } .rise.d2 { animation-delay: .14s; } .rise.d3 { animation-delay: .22s; } .rise.d4 { animation-delay: .30s; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  .hero { text-align: center; margin: 6px 0 38px; }
+  .eyebrow { display: inline-block; font-size: 11.5px; letter-spacing: 2.6px; text-transform: uppercase;
+    color: var(--c2); border: 1px solid var(--line-2); border-radius: 999px; padding: 7px 15px; background: var(--glass); margin-bottom: 22px; }
+  .hero h2 { font-family: "Space Grotesk"; font-weight: 700; font-size: clamp(30px, 5.2vw, 52px); line-height: 1.05; margin: 0 0 16px; letter-spacing: -1.4px;
+    background: linear-gradient(110deg, #ffffff 12%, var(--c2) 42%, var(--c1) 64%, #ffffff 92%); background-size: 220% auto;
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: shimmer 7s linear infinite; }
+  @keyframes shimmer { to { background-position: 220% center; } }
+  .hero p.lead { color: var(--muted); max-width: 660px; margin: 0 auto; font-size: 16px; }
+  .hero p.lead b { color: var(--ink); font-weight: 600; }
+
+  .section-h { margin: 56px 0 6px; font-family: "Space Grotesk"; font-weight: 700; font-size: 24px; letter-spacing: -.5px; }
+  .section-sub { color: var(--muted); max-width: 640px; margin: 0 0 26px; font-size: 14.5px; }
+
+  /* actor cards */
+  .actors { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .actors { grid-template-columns: 1fr; } }
+  .actor { background: linear-gradient(180deg, var(--glass-2), var(--glass)); border: 1px solid var(--line);
+    border-radius: 18px; padding: 22px; position: relative; overflow: hidden; }
+  .actor::before { content:""; position:absolute; inset:0 0 auto 0; height:1px; background: linear-gradient(90deg, transparent, var(--line-2), transparent); }
+  .actor .ai-ico { width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; margin-bottom: 14px;
+    font-family: "Space Grotesk"; font-weight: 700; font-size: 18px; color: #04111f; }
+  .actor.buyer .ai-ico { background: linear-gradient(135deg, var(--gold), #e0a23a); }
+  .actor.agent .ai-ico { background: linear-gradient(135deg, var(--c2), var(--c1)); }
+  .actor h3 { font-family: "Space Grotesk"; font-size: 19px; margin: 0 0 4px; letter-spacing: -.3px; }
+  .actor .who { font-size: 12px; color: var(--faint); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .actor p { color: var(--muted); font-size: 13.5px; margin: 0; }
+
+  /* steps */
+  .steps { display: grid; gap: 12px; }
+  .stepc { display: grid; grid-template-columns: 54px 1fr auto; gap: 16px; align-items: center;
+    background: linear-gradient(180deg, var(--glass-2), var(--glass)); border: 1px solid var(--line);
+    border-radius: 14px; padding: 16px 18px; position: relative; }
+  @media (max-width: 640px) { .stepc { grid-template-columns: 46px 1fr; } .stepc .layer { grid-column: 2; justify-self: start; } }
+  .stepc .num { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+    font-family: "Space Grotesk"; font-weight: 700; font-size: 17px; color: #04111f; }
+  .stepc.bond .num { background: linear-gradient(135deg, var(--gold), #e0a23a); color:#1f1402; }
+  .stepc.stream .num { background: linear-gradient(135deg, #5be3b0, #2fbf8c); color:#042016; }
+  .stepc.both .num { background: linear-gradient(135deg, var(--c2), var(--c1)); }
+  .stepc h4 { font-family: "Space Grotesk"; font-size: 15px; margin: 0 0 3px; letter-spacing: -.2px; }
+  .stepc h4 .actor-tag { font-size: 12px; font-weight: 600; }
+  .stepc h4 .actor-tag.buyer { color: var(--gold); } .stepc h4 .actor-tag.agent { color: var(--c2); }
+  .stepc p { font-size: 13px; color: var(--muted); margin: 0; }
+  .stepc code { color: var(--c2); font-family: ui-monospace, monospace; font-size: 12px; }
+  .layer { font-size: 10.5px; text-transform: uppercase; letter-spacing: 1px; color: var(--faint);
+    border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px; white-space: nowrap; }
+
+  .panel { background: linear-gradient(180deg, var(--glass-2), var(--glass)); border: 1px solid var(--line);
+    border-radius: 18px; padding: 24px; position: relative; overflow: hidden; }
+  .panel::before { content:""; position:absolute; inset:0 0 auto 0; height:1px; background: linear-gradient(90deg, transparent, var(--line-2), transparent); }
+  .live-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-top: 4px; }
+  @media (max-width: 640px) { .live-grid { grid-template-columns: 1fr; } }
+  .live-grid .cell { text-align: center; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--glass); }
+  .live-grid b { font-family: "Space Grotesk"; font-size: 22px; display: block; letter-spacing: -.4px;
+    background: linear-gradient(120deg, #fff, var(--c2)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .live-grid small { color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: .7px; }
+
+  .run { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 13px; background: #04060d; border: 1px solid var(--line-2);
+    border-radius: 12px; padding: 16px 18px; color: #cfe0ff; overflow-x: auto; white-space: pre; line-height: 1.7; }
+  .run .pr { color: var(--faint); } .run .cm { color: var(--c2); } .run .fl { color: var(--gold); }
+
+  .addr-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12px; color: var(--muted); justify-content: center; margin: 44px 0 0; }
+  .addr-bar a, .addr-bar span.chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border: 1px solid var(--line);
+    border-radius: 999px; background: var(--glass); text-decoration: none; transition: .18s; }
+  .addr-bar a:hover { border-color: var(--line-2); color: var(--c2); }
+  .addr-bar code { color: var(--c2); font-family: ui-monospace, monospace; }
+  footer { text-align: center; color: var(--faint); font-size: 12px; padding: 40px 20px 10px; }
+  footer a { color: var(--muted); text-decoration: none; } footer a:hover { color: var(--c2); }
+</style>
+</head>
+<body>
+<div class="aurora"></div>
+<div class="grain"></div>
+
+<header>
+  <div class="brand">
+    <div class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6l8-4z" stroke="#04111f" stroke-width="2" stroke-linejoin="round"/><path d="M8 12.5l2.5 2.5L16 9.5" stroke="#04111f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div>
+      <h1>Arc Agentic Stack</h1>
+      <small>use case · hire an AI service agent</small>
+    </div>
+  </div>
+  <a class="back" href="../">← Back to the stack</a>
+</header>
+
+<main>
+  <section class="hero rise">
+    <div class="eyebrow">Scenario · End-to-end commerce</div>
+    <h2>Hire an AI service agent,<br>settled entirely in USDC</h2>
+    <p class="lead"><b>Acme Corp</b> needs a market-research report and hires <b>Aiden</b>, an autonomous AI research agent. The two primitives turn that into a real transaction: Aiden <b>bonds</b> for trust, gets <b>streamed</b> USDC per second of work, and the job <b>settles</b> on-chain — no invoice, no platform, no chargeback. Every step below runs against the <b>live testnet contracts</b>.</p>
+  </section>
+
+  <!-- ACTORS -->
+  <h3 class="section-h rise d1">The two parties</h3>
+  <p class="section-sub rise d1">A buyer and an agent who have never met, transacting safely because trust and payment are on-chain.</p>
+  <div class="actors rise d1">
+    <div class="actor buyer">
+      <div class="ai-ico">A</div>
+      <h3>Acme Corp</h3>
+      <div class="who">Buyer · enforcer · payer</div>
+      <p>Wants a research report. Needs to know the agent won't take the money and vanish, and wants to pay for work as it actually lands — not a lump sum up front.</p>
+    </div>
+    <div class="actor agent">
+      <div class="ai-ico">Ai</div>
+      <h3>Aiden</h3>
+      <div class="who">Autonomous AI research agent</div>
+      <p>Sells research work. Has no brand or legal entity to vouch for it — so it puts up a USDC bond as collateral, and earns continuously as it delivers.</p>
+    </div>
+  </div>
+
+  <!-- STEPS -->
+  <h3 class="section-h rise d2">The flow, step by step</h3>
+  <p class="section-sub rise d2">Job: <b>market-research report on stablecoin payment rails</b> · guarantee <b>0.50 USDC</b> · budget <b>0.60 USDC</b> streamed over the work window.</p>
+  <div class="steps rise d2">
+    <div class="stepc bond">
+      <div class="num">1</div>
+      <div><h4><span class="actor-tag agent">Aiden</span> posts a bond</h4><p>Deposits <code>0.50 USDC</code> into AgentBond — skin-in-the-game behind its reputation. Its free bond becomes a public credit score.</p></div>
+      <span class="layer">AgentBond</span>
+    </div>
+    <div class="stepc bond">
+      <div class="num">2</div>
+      <div><h4><span class="actor-tag agent">Aiden</span> grants Acme slashing rights</h4><p><code>setSlashAllowance(Acme, 0.50)</code> — Aiden opts Acme in as the enforcer that may lock and, on default, slash its bond. Nothing can touch the bond without this grant.</p></div>
+      <span class="layer">AgentBond</span>
+    </div>
+    <div class="stepc bond">
+      <div class="num">3</div>
+      <div><h4><span class="actor-tag buyer">Acme</span> locks the job guarantee</h4><p><code>lock(Aiden, …, 0.50)</code> opens an obligation: deliver the report, or the bond pays Acme. A deadline lets Aiden reclaim the bond if Acme ever abandons the job.</p></div>
+      <span class="layer">AgentBond</span>
+    </div>
+    <div class="stepc stream">
+      <div class="num">4</div>
+      <div><h4><span class="actor-tag buyer">Acme</span> opens a pay-per-second stream</h4><p><code>createStream(Aiden, 0.60, window)</code> — USDC now accrues to Aiden second by second as it works. No invoice, no upfront lump sum.</p></div>
+      <span class="layer">StreamPay</span>
+    </div>
+    <div class="stepc stream">
+      <div class="num">5</div>
+      <div><h4><span class="actor-tag agent">Aiden</span> withdraws its earnings</h4><p>As the report lands, Aiden calls <code>withdraw(stream)</code> and pulls the streamed-so-far USDC. It is paid for delivered work, in real time.</p></div>
+      <span class="layer">StreamPay</span>
+    </div>
+    <div class="stepc both">
+      <div class="num">6</div>
+      <div><h4><span class="actor-tag buyer">Acme</span> settles the job</h4><p>Report accepted → <code>release(obligation)</code> returns the guarantee and grows Aiden's reputation. Had Aiden defaulted, Acme would call <code>slash()</code> and the bond would pay Acme instead.</p></div>
+      <span class="layer">both</span>
+    </div>
+  </div>
+
+  <!-- LIVE -->
+  <h3 class="section-h rise d3">Live on Arc testnet</h3>
+  <p class="section-sub rise d3">These contracts are deployed and running. The counts below are read straight from the public Arc RPC right now.</p>
+  <div class="panel rise d3">
+    <div class="live-grid">
+      <div class="cell"><b id="lObl">—</b><small>obligations opened</small></div>
+      <div class="cell"><b id="lStreams">—</b><small>streams opened</small></div>
+      <div class="cell"><b id="lUsdc">—</b><small>USDC in the stack</small></div>
+    </div>
+    <p style="font-size:12.5px; color:var(--faint); margin:16px 0 0;">Run the exact scenario above yourself — it seeds a fresh buyer wallet and plays all six steps with real USDC transactions:</p>
+    <div class="run" style="margin-top:12px;"><span class="cm"># dry run — print the script of the demo, no transactions</span>
+node demo/commerce-scenario.js
+
+<span class="cm"># live — execute on Arc testnet (needs a funded burner)</span>
+<span class="fl">PRIVATE_KEY</span>=0x… <span class="fl">LIVE</span>=1 node demo/commerce-scenario.js</div>
+  </div>
+
+  <div class="addr-bar rise d4">
+    <span class="chip">Chain <code>5042002</code></span>
+    <a id="abLink" target="_blank" rel="noopener">AgentBond <code id="abAddr">—</code> ↗</a>
+    <a id="spLink" target="_blank" rel="noopener">StreamPay <code id="spAddr">—</code> ↗</a>
+    <a href="https://github.com/Mnorbert87/arc-agentic-stack" target="_blank" rel="noopener">GitHub ↗</a>
+  </div>
+
+  <footer>
+    Arc Agentic Stack · Use case: hire an AI service agent · Circle Stablecoin Commerce Stack Challenge — Track 4 · Arc Testnet, USDC-native · testnet demo, not for production use
+  </footer>
+</main>
+
+<script type="module">
+import { ethers } from "https://esm.sh/ethers@6.13.4";
+
+const RPC = "https://rpc.testnet.arc.network";
+const CHAIN_ID = 5042002;
+const EXPLORER = "https://testnet.arcscan.app";
+const AB_ADDR = "0xB9b4d476bC383eE2951a3eC3A22779458cdBf8e0";
+const SP_ADDR = "0x505739d33D85AD85D0f9eeE64856309782382450";
+
+const read = new ethers.JsonRpcProvider(RPC, CHAIN_ID);
+const $ = (id) => document.getElementById(id);
+const short = (a) => a ? a.slice(0, 6) + "…" + a.slice(-4) : "—";
+
+$("abAddr").textContent = short(AB_ADDR);
+$("spAddr").textContent = short(SP_ADDR);
+$("abLink").href = `${EXPLORER}/address/${AB_ADDR}`;
+$("spLink").href = `${EXPLORER}/address/${SP_ADDR}`;
+
+const AB_ABI = ["function nextObligationId() view returns (uint256)", "function usdc() view returns (address)"];
+const SP_ABI = ["function nextId() view returns (uint256)", "function usdc() view returns (address)"];
+const ERC20_ABI = ["function balanceOf(address) view returns (uint256)", "function decimals() view returns (uint8)"];
+
+(async () => {
+  try {
+    const ab = new ethers.Contract(AB_ADDR, AB_ABI, read);
+    const sp = new ethers.Contract(SP_ADDR, SP_ABI, read);
+    const [nextObl, nextStream, u] = await Promise.all([ab.nextObligationId(), sp.nextId(), ab.usdc()]);
+    $("lObl").textContent = Math.max(0, Number(nextObl) - 1).toLocaleString();
+    $("lStreams").textContent = Math.max(0, Number(nextStream) - 1).toLocaleString();
+    const erc = new ethers.Contract(u, ERC20_ABI, read);
+    let dec = 6; try { dec = Number(await erc.decimals()); } catch {}
+    const [b1, b2] = await Promise.all([erc.balanceOf(AB_ADDR), erc.balanceOf(SP_ADDR)]);
+    const total = Number(ethers.formatUnits(b1 + b2, dec));
+    $("lUsdc").textContent = total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  } catch (e) {
+    ["lObl","lStreams","lUsdc"].forEach(i => $(i).textContent = "n/a");
+  }
+})();
+</script>
+</body>
+</html>
