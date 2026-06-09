@@ -535,25 +535,35 @@ async function loadInfo() {
 }
 
 async function connect() {
-  if (!window.ethereum) return toast("No wallet found. Install MetaMask.", "bad");
-  provider = new ethers.BrowserProvider(window.ethereum);
-  await provider.send("eth_requestAccounts", []);
   try {
-    await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: CHAIN_HEX }] });
+    if (!window.ethereum) return toast("No wallet found. Install MetaMask.", "bad");
+    provider = new ethers.BrowserProvider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+    // Show connected as soon as the account is authorized — never block the UI on the network step.
+    signer = await provider.getSigner();
+    account = await signer.getAddress();
+    $("connectBtn").textContent = short(account);
+    // Best-effort switch/add Arc Testnet; a failure here must not hide that we are connected.
+    try {
+      await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: CHAIN_HEX }] });
+    } catch (e) {
+      if (e.code === 4902 || e.code === -32603) {
+        await window.ethereum.request({ method: "wallet_addEthereumChain", params: [{
+          chainId: CHAIN_HEX, chainName: "Arc Testnet",
+          nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 },
+          rpcUrls: [RPC], blockExplorerUrls: [EXPLORER] }] });
+      } else if (e.code !== 4001) {
+        toast("Connected — now switch to Arc Testnet in MetaMask to transact.", "bad");
+      }
+    }
+    const net = await provider.getNetwork();
+    const onArc = Number(net.chainId) === CHAIN_ID;
+    $("netBadge").className = "net-badge" + (onArc ? " ok" : "");
+    $("netBadge").innerHTML = '<span class="dot"></span>' + (onArc ? "Arc Testnet" : "Wrong network");
+    loadInfo();
   } catch (e) {
-    if (e.code === 4902) {
-      await window.ethereum.request({ method: "wallet_addEthereumChain", params: [{
-        chainId: CHAIN_HEX, chainName: "Arc Testnet",
-        nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 },
-        rpcUrls: [RPC], blockExplorerUrls: [EXPLORER] }] });
-    } else throw e;
+    toast("Connect failed: " + (e.shortMessage || e.message || ("code " + e.code)), "bad");
   }
-  signer = await provider.getSigner();
-  account = await signer.getAddress();
-  $("connectBtn").textContent = short(account);
-  $("netBadge").className = "net-badge ok";
-  $("netBadge").innerHTML = '<span class="dot"></span>Arc Testnet';
-  loadInfo();
 }
 function needWallet() { if (!signer) { connect(); return true; } return false; }
 function spWrite() { return new ethers.Contract(spAddress(), SP_ABI, signer); }
