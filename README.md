@@ -31,8 +31,8 @@ No backend. The frontends read live state straight from the public Arc RPC and w
 
 | Contract | Address |
 |---|---|
-| AgentBond | [`0xb70f607de14afd682cc834352460a664e25e1dcb`](https://testnet.arcscan.app/address/0xb70f607de14afd682cc834352460a664e25e1dcb) |
-| StreamPay | [`0x072599dd2121b9b5b9b59cebe0c9e32c5ea00789`](https://testnet.arcscan.app/address/0x072599dd2121b9b5b9b59cebe0c9e32c5ea00789) |
+| AgentBond | [`0xB9b4d476bC383eE2951a3eC3A22779458cdBf8e0`](https://testnet.arcscan.app/address/0xB9b4d476bC383eE2951a3eC3A22779458cdBf8e0) |
+| StreamPay | [`0x505739d33D85AD85D0f9eeE64856309782382450`](https://testnet.arcscan.app/address/0x505739d33D85AD85D0f9eeE64856309782382450) |
 
 - **RPC:** `https://rpc.testnet.arc.network`
 - **Explorer:** `https://testnet.arcscan.app`
@@ -60,8 +60,8 @@ A reputation deposit that behaves like an ERC-20 allowance system for *slashing*
 
 - `deposit(amount)` / `withdraw(amount)` — manage your bond. *Free* bond = total − locked.
 - `setSlashAllowance(enforcer, amount)` — authorize a specific protocol to lock & slash up to `amount`. Set `0` to revoke.
-- `lock(agent, creditor, amount) → id` — an enforcer locks a slice of an agent's bond behind an obligation (spends the allowance).
-- `release(id)` — agent performed; capacity revolves back to free bond.
+- `lock(agent, creditor, amount, deadline) → id` — an enforcer locks a slice of an agent's bond behind an obligation (spends the allowance). `deadline` (unix seconds, `0` = none) lets the agent self-release if the enforcer goes silent.
+- `release(id)` — obligation settled; capacity revolves back to free bond. Callable by the enforcer any time, or by the **agent** after a non-zero `deadline` passes (anti-griefing — no enforcer can lock a bond forever).
 - `slash(id)` — agent defaulted; the bond pays the creditor, that capacity is burned.
 
 ### StreamPay — settlement layer

@@ -62,7 +62,7 @@ contract AgentBondTest is Test {
         bond.setSlashAllowance(enforcer, 50 * UNIT);
 
         vm.prank(enforcer);
-        uint256 id = bond.lock(agent, creditor, 30 * UNIT);
+        uint256 id = bond.lock(agent, creditor, 30 * UNIT, 0);
 
         assertEq(id, 1);
         assertEq(bond.locked(agent), 30 * UNIT);
@@ -74,7 +74,7 @@ contract AgentBondTest is Test {
         _deposit(100 * UNIT);
         vm.prank(other); // never approved
         vm.expectRevert("ALLOWANCE");
-        bond.lock(agent, creditor, 10 * UNIT);
+        bond.lock(agent, creditor, 10 * UNIT, 0);
     }
 
     function test_lock_revertsOverFreeBond() public {
@@ -83,7 +83,7 @@ contract AgentBondTest is Test {
         bond.setSlashAllowance(enforcer, 100 * UNIT); // generous allowance...
         vm.prank(enforcer);
         vm.expectRevert("INSUFFICIENT_BOND"); // ...but only 20 bond exists
-        bond.lock(agent, creditor, 50 * UNIT);
+        bond.lock(agent, creditor, 50 * UNIT, 0);
     }
 
     function test_lockedBond_cannotBeWithdrawn() public {
@@ -91,7 +91,7 @@ contract AgentBondTest is Test {
         vm.prank(agent);
         bond.setSlashAllowance(enforcer, 100 * UNIT);
         vm.prank(enforcer);
-        bond.lock(agent, creditor, 80 * UNIT);
+        bond.lock(agent, creditor, 80 * UNIT, 0);
 
         vm.prank(agent);
         vm.expectRevert("INSUFFICIENT_FREE");
@@ -105,7 +105,7 @@ contract AgentBondTest is Test {
         vm.prank(agent);
         bond.setSlashAllowance(enforcer, 50 * UNIT);
         vm.prank(enforcer);
-        uint256 id = bond.lock(agent, creditor, 30 * UNIT);
+        uint256 id = bond.lock(agent, creditor, 30 * UNIT, 0);
 
         vm.prank(enforcer);
         bond.release(id);
@@ -120,10 +120,10 @@ contract AgentBondTest is Test {
         vm.prank(agent);
         bond.setSlashAllowance(enforcer, 50 * UNIT);
         vm.prank(enforcer);
-        uint256 id = bond.lock(agent, creditor, 30 * UNIT);
+        uint256 id = bond.lock(agent, creditor, 30 * UNIT, 0);
 
         vm.prank(other);
-        vm.expectRevert("NOT_ENFORCER");
+        vm.expectRevert("NOT_AUTHORIZED");
         bond.release(id);
     }
 
@@ -132,7 +132,7 @@ contract AgentBondTest is Test {
         vm.prank(agent);
         bond.setSlashAllowance(enforcer, 50 * UNIT);
         vm.prank(enforcer);
-        uint256 id = bond.lock(agent, creditor, 30 * UNIT);
+        uint256 id = bond.lock(agent, creditor, 30 * UNIT, 0);
         vm.prank(enforcer);
         bond.release(id);
 
@@ -148,7 +148,7 @@ contract AgentBondTest is Test {
         vm.prank(agent);
         bond.setSlashAllowance(enforcer, 50 * UNIT);
         vm.prank(enforcer);
-        uint256 id = bond.lock(agent, creditor, 30 * UNIT);
+        uint256 id = bond.lock(agent, creditor, 30 * UNIT, 0);
 
         vm.prank(enforcer);
         bond.slash(id);
@@ -165,7 +165,7 @@ contract AgentBondTest is Test {
         vm.prank(agent);
         bond.setSlashAllowance(enforcer, 50 * UNIT);
         vm.prank(enforcer);
-        uint256 id = bond.lock(agent, creditor, 30 * UNIT);
+        uint256 id = bond.lock(agent, creditor, 30 * UNIT, 0);
 
         vm.prank(other);
         vm.expectRevert("NOT_ENFORCER");
@@ -177,7 +177,7 @@ contract AgentBondTest is Test {
         vm.prank(agent);
         bond.setSlashAllowance(enforcer, 50 * UNIT);
         vm.prank(enforcer);
-        uint256 id = bond.lock(agent, creditor, 30 * UNIT);
+        uint256 id = bond.lock(agent, creditor, 30 * UNIT, 0);
         vm.prank(enforcer);
         bond.slash(id);
 
@@ -195,9 +195,9 @@ contract AgentBondTest is Test {
         vm.stopPrank();
 
         vm.prank(enforcer);
-        uint256 id1 = bond.lock(agent, creditor, 30 * UNIT);
+        uint256 id1 = bond.lock(agent, creditor, 30 * UNIT, 0);
         vm.prank(enforcer);
-        uint256 id2 = bond.lock(agent, creditor, 40 * UNIT);
+        uint256 id2 = bond.lock(agent, creditor, 40 * UNIT, 0);
 
         assertEq(bond.locked(agent), 70 * UNIT);
 
@@ -225,6 +225,56 @@ contract AgentBondTest is Test {
 
         vm.prank(enforcer);
         vm.expectRevert("ALLOWANCE");
-        bond.lock(agent, creditor, 10 * UNIT);
+        bond.lock(agent, creditor, 10 * UNIT, 0);
+    }
+
+    // --- deadline / agent self-release (anti-griefing) ---
+
+    function _lockWithDeadline(uint64 deadline) internal returns (uint256 id) {
+        _deposit(100 * UNIT);
+        vm.prank(agent);
+        bond.setSlashAllowance(enforcer, 50 * UNIT);
+        vm.prank(enforcer);
+        id = bond.lock(agent, creditor, 30 * UNIT, deadline);
+    }
+
+    function test_agentSelfRelease_afterDeadline() public {
+        uint64 deadline = uint64(block.timestamp + 1 days);
+        uint256 id = _lockWithDeadline(deadline);
+
+        vm.warp(deadline + 1);
+        vm.prank(agent); // the enforcer abandoned it; the agent reclaims
+        bond.release(id);
+
+        assertEq(bond.locked(agent), 0);
+        assertEq(bond.freeBondOf(agent), 100 * UNIT);
+        assertEq(bond.slashAllowance(agent, enforcer), 50 * UNIT); // capacity revolves back
+    }
+
+    function test_agentSelfRelease_beforeDeadline_reverts() public {
+        uint64 deadline = uint64(block.timestamp + 1 days);
+        uint256 id = _lockWithDeadline(deadline);
+
+        vm.warp(deadline - 1); // not yet expired
+        vm.prank(agent);
+        vm.expectRevert("NOT_AUTHORIZED");
+        bond.release(id);
+    }
+
+    function test_agentSelfRelease_noDeadline_reverts() public {
+        uint256 id = _lockWithDeadline(0); // 0 = no expiry
+        vm.warp(block.timestamp + 3650 days); // even far in the future
+        vm.prank(agent);
+        vm.expectRevert("NOT_AUTHORIZED"); // agent can never self-release a no-deadline obligation
+        bond.release(id);
+    }
+
+    function test_enforcerRelease_unaffectedByDeadline() public {
+        uint64 deadline = uint64(block.timestamp + 1 days);
+        uint256 id = _lockWithDeadline(deadline);
+
+        vm.prank(enforcer); // enforcer can still resolve any time, before or after deadline
+        bond.release(id);
+        assertEq(bond.locked(agent), 0);
     }
 }

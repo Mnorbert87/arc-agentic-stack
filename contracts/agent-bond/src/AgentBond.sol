@@ -53,6 +53,7 @@ contract AgentBond is ReentrancyGuard {
         address enforcer; // the protocol contract that opened it (only it can resolve)
         address creditor; // where a slash sends the funds
         uint256 amount; // micro-USDC locked
+        uint64 deadline; // 0 = no expiry; if set, the agent may self-release after this time
         Status status;
     }
 
@@ -76,7 +77,8 @@ contract AgentBond is ReentrancyGuard {
         address indexed agent,
         address indexed enforcer,
         address creditor,
-        uint256 amount
+        uint256 amount,
+        uint64 deadline
     );
     event Released(uint256 indexed id, address indexed agent, uint256 amount);
     event Slashed(uint256 indexed id, address indexed agent, address indexed creditor, uint256 amount);
@@ -126,8 +128,12 @@ contract AgentBond is ReentrancyGuard {
 
     /// @notice Called by an approved enforcer to lock `amount` of `agent`'s free bond behind a new
     ///         obligation. Spends the enforcer's slashing allowance for that agent.
+    /// @param deadline unix seconds after which the agent may self-`release` an unresolved
+    ///        obligation. Pass `0` for no expiry (the enforcer must then resolve it). A non-zero
+    ///        deadline closes the indefinite-lock griefing vector: the agent can always reclaim a
+    ///        bond an enforcer abandons, without anyone being slashed.
     /// @return id the new obligation id.
-    function lock(address agent, address creditor, uint256 amount)
+    function lock(address agent, address creditor, uint256 amount, uint64 deadline)
         external
         nonReentrant
         returns (uint256 id)
@@ -149,18 +155,23 @@ contract AgentBond is ReentrancyGuard {
             enforcer: msg.sender,
             creditor: creditor,
             amount: amount,
+            deadline: deadline,
             status: Status.Active
         });
 
-        emit Locked(id, agent, msg.sender, creditor, amount);
+        emit Locked(id, agent, msg.sender, creditor, amount, deadline);
     }
 
-    /// @notice Obligation settled cleanly: unlock the bond and return the revolving capacity to
-    ///         the enforcer's allowance. Only the enforcer that opened it may call this.
+    /// @notice Obligation settled: unlock the bond and return the revolving capacity to the
+    ///         enforcer's allowance. The enforcer may call this at any time. The agent may call it
+    ///         only after a non-zero `deadline` has passed, to reclaim a bond an enforcer abandoned.
     function release(uint256 id) external nonReentrant {
         Obligation storage o = obligations[id];
         require(o.status == Status.Active, "NOT_ACTIVE");
-        require(msg.sender == o.enforcer, "NOT_ENFORCER");
+        bool byEnforcer = msg.sender == o.enforcer;
+        bool byAgentExpired =
+            msg.sender == o.agent && o.deadline != 0 && block.timestamp > o.deadline;
+        require(byEnforcer || byAgentExpired, "NOT_AUTHORIZED");
 
         o.status = Status.Released;
         locked[o.agent] -= o.amount;

@@ -90,7 +90,7 @@ contract AgentBondAdversarialTest is Test {
     function test_reentrantSlash_blocked() public {
         // creditor is the evil token contract so its transfer hook fires inside slash()
         vm.prank(enforcer);
-        uint256 id = bond.lock(agent, address(evil), 30 * UNIT);
+        uint256 id = bond.lock(agent, address(evil), 30 * UNIT, 0);
         evil.setTarget(bond, id);
 
         vm.prank(enforcer);

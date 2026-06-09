@@ -358,6 +358,10 @@
         <div><label>Creditor (paid on slash)</label><input id="eCreditor" spellcheck="false" placeholder="0x… who gets the funds if slashed" /></div>
         <div><label>Amount (USDC)</label><input id="eAmount" type="number" min="0" step="0.000001" placeholder="20" /></div>
       </div>
+      <div class="row">
+        <div><label>Deadline (hours, 0 = none)</label><input id="eDeadline" type="number" min="0" step="1" placeholder="0" /></div>
+      </div>
+      <p class="hint" style="margin-top:10px;">Set a deadline and the <b>agent</b> can self-release this obligation if you never resolve it — no bond can be locked forever. <code>0</code> = no expiry (only you can resolve).</p>
       <div class="actions">
         <button id="useMeCreditor" class="mini">Me as creditor</button>
         <button id="lockBtn" class="primary" style="margin-left:auto;">Lock bond</button>
@@ -377,6 +381,7 @@
         <div class="kv"><span>Agent</span><span id="dAgent" class="addr"></span></div>
         <div class="kv"><span>Enforcer</span><span id="dEnforcer" class="addr"></span></div>
         <div class="kv"><span>Creditor</span><span id="dCreditor" class="addr"></span></div>
+        <div class="kv"><span>Deadline</span><span id="dDeadline"></span></div>
         <div class="actions">
           <button id="releaseBtn" class="good">Release (performed)</button>
           <button id="slashBtn" class="bad">Slash (defaulted)</button>
@@ -424,7 +429,7 @@ const RPC = "https://rpc.testnet.arc.network";
 const CHAIN_ID = 5042002;
 const CHAIN_HEX = "0x" + CHAIN_ID.toString(16);
 const EXPLORER = "https://testnet.arcscan.app";
-const DEFAULT_AB = "0xb70f607de14afd682cc834352460a664e25e1dcb";
+const DEFAULT_AB = "0xB9b4d476bC383eE2951a3eC3A22779458cdBf8e0";
 
 const AB_ABI = [
   "function nextObligationId() view returns (uint256)",
@@ -433,11 +438,11 @@ const AB_ABI = [
   "function locked(address) view returns (uint256)",
   "function freeBondOf(address agent) view returns (uint256)",
   "function slashAllowance(address agent,address enforcer) view returns (uint256)",
-  "function getObligation(uint256 id) view returns (tuple(address agent,address enforcer,address creditor,uint256 amount,uint8 status))",
+  "function getObligation(uint256 id) view returns (tuple(address agent,address enforcer,address creditor,uint256 amount,uint64 deadline,uint8 status))",
   "function deposit(uint256 amount)",
   "function withdraw(uint256 amount)",
   "function setSlashAllowance(address enforcer,uint256 amount)",
-  "function lock(address agent,address creditor,uint256 amount) returns (uint256)",
+  "function lock(address agent,address creditor,uint256 amount,uint64 deadline) returns (uint256)",
   "function release(uint256 id)",
   "function slash(uint256 id)"
 ];
@@ -647,10 +652,12 @@ $("lockBtn").onclick = async () => {
   if (!ethers.isAddress(creditor)) return toast("Invalid creditor address", "bad");
   if (!v || Number(v) <= 0) return toast("Enter an amount > 0", "bad");
   const amount = ethers.parseUnits(v, usdcDecimals);
+  const hrs = Number($("eDeadline").value.trim() || "0");
+  const deadline = hrs > 0 ? Math.floor(Date.now() / 1000) + Math.round(hrs * 3600) : 0;
   try {
     await ensureChain();
     toast("Locking bond…");
-    const tx = await ab(signer).lock(agent, creditor, amount); const rc = await tx.wait();
+    const tx = await ab(signer).lock(agent, creditor, amount, deadline); const rc = await tx.wait();
     toast("Obligation opened", "good", rc.hash);
     loadInfo();
   } catch (e) { toast("Failed: " + (e.shortMessage || e.message), "bad"); }
@@ -663,16 +670,26 @@ function renderObligation(id, o) {
   $("dAgent").textContent = o.agent;
   $("dEnforcer").textContent = o.enforcer;
   $("dCreditor").textContent = o.creditor;
+  const dl = Number(o.deadline);
+  const expired = dl !== 0 && Date.now() / 1000 > dl;
+  $("dDeadline").textContent = dl === 0
+    ? "none"
+    : new Date(dl * 1000).toLocaleString() + (expired ? " · expired" : "");
   $("oDetail").style.display = "block";
   const me = account?.toLowerCase();
   const active = Number(o.status) === 1;
   const isEnforcer = me === o.enforcer.toLowerCase();
-  $("releaseBtn").disabled = !(active && isEnforcer);
+  const isAgent = me === o.agent.toLowerCase();
+  // The enforcer can release/slash any time; the agent can self-release only after the deadline.
+  const agentCanRelease = isAgent && expired;
+  $("releaseBtn").disabled = !(active && (isEnforcer || agentCanRelease));
   $("slashBtn").disabled = !(active && isEnforcer);
   const h = [];
   if (!account) h.push("Connect your wallet to act.");
   else if (!active) h.push("This obligation is already resolved (" + st + ").");
   else if (isEnforcer) h.push("You are the enforcer — release if performed, slash on default.");
+  else if (agentCanRelease) h.push("Deadline passed and the enforcer hasn't resolved — you may self-release to reclaim your bond.");
+  else if (isAgent && dl !== 0) h.push("You are the agent. If the enforcer abandons this, you can self-release after the deadline.");
   else h.push("Only the enforcer that opened this can resolve it.");
   $("roleHint").textContent = h.join(" ");
 }

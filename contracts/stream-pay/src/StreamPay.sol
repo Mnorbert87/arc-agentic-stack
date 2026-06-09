@@ -137,6 +137,9 @@ contract StreamPay is ReentrancyGuard {
     function streamedTotal(uint256 id) public view returns (uint256) {
         Stream storage s = streams[id];
         if (s.status == Status.None) return 0;
+        // Terminal: the stream no longer accrues. `withdrawn` was frozen to the final streamed
+        // amount on the last withdraw / on cancel, so report that and stop tracking wall-clock time.
+        if (s.status == Status.Ended) return s.withdrawn;
         if (block.timestamp <= s.start) return 0;
         if (block.timestamp >= s.stop) return s.deposit;
         uint256 elapsed = block.timestamp - s.start;
@@ -145,12 +148,16 @@ contract StreamPay is ReentrancyGuard {
     }
 
     /// @notice Micro-USDC currently withdrawable by the recipient (streamed minus already taken).
+    ///         Always 0 for a terminal (ended/cancelled) stream — the escrow holds nothing for it.
     function recipientBalance(uint256 id) public view returns (uint256) {
+        if (streams[id].status != Status.Active) return 0;
         return streamedTotal(id) - streams[id].withdrawn;
     }
 
     /// @notice Micro-USDC the sender would reclaim on an immediate cancel (the unstreamed part).
+    ///         Always 0 for a terminal (ended/cancelled) stream — nothing remains to reclaim.
     function senderBalance(uint256 id) public view returns (uint256) {
+        if (streams[id].status != Status.Active) return 0;
         return streams[id].deposit - streamedTotal(id);
     }
 
