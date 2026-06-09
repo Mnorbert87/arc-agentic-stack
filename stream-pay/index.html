@@ -154,6 +154,14 @@
   .settings-bar .chip:hover { border-color: var(--line-2); }
   .settings-bar code { color: var(--c2); font-family: ui-monospace, monospace; }
   .settings-bar button { padding: 6px 13px; font-size: 12px; }
+  .tok-toggle { display: inline-flex; gap: 3px; padding: 4px; border-radius: 999px;
+    border: 1px solid var(--line); background: rgba(255,255,255,0.03); box-shadow: inset 0 1px 0 rgba(255,255,255,0.04); }
+  .tok-toggle .tok { padding: 6px 16px; border-radius: 999px; background: transparent; border: none;
+    color: var(--muted); font-weight: 600; font-size: 12px; transition: .2s var(--ease); }
+  .tok-toggle .tok::after { display: none; }
+  .tok-toggle .tok:hover { transform: none; color: var(--ink); }
+  .tok-toggle .tok.active { color: #04111f; background: linear-gradient(135deg, var(--c2), var(--c1));
+    box-shadow: 0 6px 16px rgba(54,160,255,0.3); }
 
   .tabs-wrap { display: flex; justify-content: center; }
   .tabs { display: inline-flex; gap: 4px; padding: 6px; border-radius: 999px;
@@ -274,7 +282,7 @@
     <div class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h5l2-5 3 10 2-5h4" stroke="#04111f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     <div>
       <h1>StreamPay</h1>
-      <small>continuous USDC payments on Arc</small>
+      <small>continuous stablecoin payments on Arc</small>
     </div>
   </div>
   <div style="display:flex; align-items:center; gap:12px;">
@@ -285,21 +293,24 @@
 
 <main>
   <div class="hero rise">
-    <div class="eyebrow">Arc Testnet · USDC-native · Agentic</div>
+    <div class="eyebrow">Arc Testnet · USDC + EURC · Agentic</div>
     <h2>Money that flows<br>by the second</h2>
-    <p>Lock USDC and stream it to anyone in real time — agent salaries, pay-per-inference, metered APIs, subscriptions, vesting. The recipient withdraws what has streamed at any moment; either party can cancel and split the rest fairly. A public primitive for Arc's agentic economy.</p>
+    <p>Lock USDC or EURC and stream it to anyone in real time — agent salaries, pay-per-inference, metered APIs, subscriptions, vesting. The recipient withdraws what has streamed at any moment; either party can cancel and split the rest fairly. A public primitive for Arc's agentic economy.</p>
   </div>
 
   <div class="stat-row rise d1">
     <div class="stat"><b id="sTotal">—</b><small>Streams opened</small></div>
-    <div class="stat"><b id="sLocked">—</b><small>USDC streaming now</small></div>
-    <div class="stat"><b id="sMine">—</b><small>Your USDC</small></div>
+    <div class="stat"><b id="sLocked">—</b><small id="lblStreaming">USDC streaming now</small></div>
+    <div class="stat"><b id="sMine">—</b><small id="lblYours">Your USDC</small></div>
   </div>
 
   <div class="settings-bar rise d2">
+    <div class="tok-toggle" id="tokToggle">
+      <button class="tok active" data-tok="USDC">USDC</button>
+      <button class="tok" data-tok="EURC">EURC</button>
+    </div>
     <span class="chip">Contract <code id="spChip">—</code></span>
-    <span class="chip">USDC <code id="usdcChip">—</code></span>
-    <button id="editAddrBtn" class="mini">Change</button>
+    <span class="chip"><span id="tokLbl">USDC</span> token <code id="usdcChip">—</code></span>
     <a id="explorer" class="chip" target="_blank" rel="noopener" style="text-decoration:none;color:var(--c2)">arcscan ↗</a>
   </div>
 
@@ -317,14 +328,14 @@
   <section id="tab-create">
     <div class="panel">
       <h3>Open a payment stream</h3>
-      <p class="hint">Approves USDC, then locks it. It accrues to the <code>recipient</code> linearly between <code>start</code> and <code>stop</code>. They withdraw whatever has streamed, whenever they want.</p>
+      <p class="hint">Approves the token, then locks it. It accrues to the <code>recipient</code> linearly between <code>start</code> and <code>stop</code>. They withdraw whatever has streamed, whenever they want.</p>
       <div class="row">
         <div>
           <label>Recipient address</label>
           <input id="cRecipient" spellcheck="false" placeholder="0x… who gets paid" />
         </div>
         <div>
-          <label>Amount (USDC)</label>
+          <label id="lblAmount">Amount (USDC)</label>
           <input id="cAmount" type="number" min="0" step="0.000001" placeholder="10" />
         </div>
       </div>
@@ -408,7 +419,7 @@
       <div class="step"><div class="num">1</div><div><b>Open.</b> The sender locks USDC and picks a window (start → stop). The funds accrue to the recipient linearly — second by second.</div></div>
       <div class="step"><div class="num">2</div><div><b>Withdraw anytime.</b> The recipient pulls whatever has streamed so far, as often as they like. No waiting for the end.</div></div>
       <div class="step"><div class="num">3</div><div><b>Cancel fairly.</b> Either party can cancel: the recipient keeps everything streamed up to that instant, the sender is refunded the rest. The escrow stays exactly solvent at all times.</div></div>
-      <p style="margin-top:18px;">No owner, no admin keys, no protocol fee. Built for the Arc agentic economy: pay an AI agent per second of work, meter an API by usage, settle subscriptions continuously — all in USDC, the chain's native gas asset.</p>
+      <p style="margin-top:18px;">No owner, no admin keys, no protocol fee. Built for the Arc agentic economy: pay an AI agent per second of work, meter an API by usage, settle subscriptions continuously — in USDC (the chain's native gas asset) or EURC, switchable at the top.</p>
     </div>
   </section>
   </div>
@@ -427,7 +438,11 @@ const RPC = "https://rpc.testnet.arc.network";
 const CHAIN_ID = 5042002;
 const CHAIN_HEX = "0x" + CHAIN_ID.toString(16);
 const EXPLORER = "https://testnet.arcscan.app";
-const DEFAULT_SP = "0x505739d33D85AD85D0f9eeE64856309782382450";
+// Two live StreamPay instances on Arc Testnet — one per stablecoin. The toggle picks which one is active.
+const TOKENS = {
+  USDC: { sp: "0x505739d33D85AD85D0f9eeE64856309782382450", sym: "USDC" },
+  EURC: { sp: "0xa49ff45166612a151f57e1cd209dba4e75e14a41", sym: "EURC" }
+};
 
 const SP_ABI = [
   "function nextId() view returns (uint256)",
@@ -448,9 +463,12 @@ const STATUS = ["None", "Active", "Ended"];
 const read = new ethers.JsonRpcProvider(RPC, CHAIN_ID);
 let provider, signer, account, usdcAddr, usdcDecimals = 6;
 let liveStream = null, liveTimer = null;
+let activeTok = localStorage.getItem("sp_tok") || "USDC";
+if (!TOKENS[activeTok]) activeTok = "USDC";
 
 const $ = (id) => document.getElementById(id);
-const spAddress = () => (localStorage.getItem("sp_addr") || DEFAULT_SP);
+const spAddress = () => TOKENS[activeTok].sp;
+const SYM = () => TOKENS[activeTok].sym;
 const short = (a) => a ? a.slice(0, 6) + "…" + a.slice(-4) : "—";
 const fmt = (v) => ethers.formatUnits(v, usdcDecimals);
 const nowSec = () => Math.floor(Date.now() / 1000);
@@ -578,11 +596,27 @@ async function ensureChain() {
   if (Number(after.chainId) !== CHAIN_ID) throw new Error("Wrong network — switch to Arc Testnet (chain " + CHAIN_ID + ")");
 }
 
-$("editAddrBtn").onclick = () => {
-  const v = prompt("StreamPay contract address:", spAddress());
-  if (v && ethers.isAddress(v.trim())) { localStorage.setItem("sp_addr", v.trim()); loadInfo(); }
-  else if (v) toast("Invalid address", "bad");
-};
+// Token switch (USDC ↔ EURC): repoints the active StreamPay contract and relabels the whole UI.
+function applyTokenLabels() {
+  const s = SYM();
+  $("tokLbl").textContent = s;
+  $("lblStreaming").textContent = s + " streaming now";
+  $("lblYours").textContent = "Your " + s;
+  $("lblAmount").textContent = "Amount (" + s + ")";
+  document.querySelectorAll(".tok-toggle .tok").forEach((b) => b.classList.toggle("active", b.dataset.tok === activeTok));
+}
+document.querySelectorAll(".tok-toggle .tok").forEach((b) => b.onclick = () => {
+  if (b.dataset.tok === activeTok) return;
+  activeTok = b.dataset.tok;
+  localStorage.setItem("sp_tok", activeTok);
+  usdcDecimals = 6; usdcAddr = undefined;
+  liveStream = null; clearInterval(liveTimer);
+  $("mDetail").style.display = "none";
+  applyTokenLabels();
+  loadInfo();
+  if ($("tab-browse").style.display === "block") browse();
+  toast("Switched to " + activeTok + " StreamPay", "good");
+});
 
 // quick-window presets set stop = start + duration
 document.querySelectorAll(".preset-row button").forEach((b) => b.onclick = () => {
@@ -603,9 +637,10 @@ function updateRate() {
   if (amt > 0 && b > a) {
     const perSec = amt / (b - a);
     let txt;
-    if (perSec >= 1) txt = perSec.toFixed(2) + " USDC/s";
-    else if (perSec * 3600 >= 1) txt = (perSec * 3600).toFixed(3) + " USDC/hr";
-    else txt = (perSec * 86400).toFixed(3) + " USDC/day";
+    const u = SYM();
+    if (perSec >= 1) txt = perSec.toFixed(2) + " " + u + "/s";
+    else if (perSec * 3600 >= 1) txt = (perSec * 3600).toFixed(3) + " " + u + "/hr";
+    else txt = (perSec * 86400).toFixed(3) + " " + u + "/day";
     $("rateHint").textContent = "rate ≈ " + txt;
   } else $("rateHint").textContent = "rate —";
 }
@@ -661,8 +696,8 @@ function renderStream(id, s) {
   const pending = Number(s.status) === 1 && t < Number(s.start);
   const label = pending ? "Pending" : st;
   $("dStatus").innerHTML = `<span class="badge ${label}">${label}</span>`;
-  $("dDeposit").textContent = fmt(s.deposit) + " USDC";
-  $("dWithdrawn").textContent = fmt(s.withdrawn) + " USDC";
+  $("dDeposit").textContent = fmt(s.deposit) + " " + SYM();
+  $("dWithdrawn").textContent = fmt(s.withdrawn) + " " + SYM();
   $("dSender").textContent = s.sender;
   $("dRecipient").textContent = s.recipient;
   $("dWindow").textContent = new Date(Number(s.start)*1000).toLocaleString() + "  →  " + new Date(Number(s.stop)*1000).toLocaleString();
@@ -731,7 +766,7 @@ async function browse() {
       el.className = "card";
       el.innerHTML = `
         <div class="top"><span class="id">#${id}</span><span class="badge ${st}">${st}</span></div>
-        <div class="amt">${fmt(s.deposit)} USDC</div>
+        <div class="amt">${fmt(s.deposit)} ${SYM()}</div>
         <div class="mini-bar"><div class="mini-fill" style="width:${Math.min(100,pct)}%"></div></div>
         <div class="meta">to ${short(s.recipient)}<br>from ${short(s.sender)}<br>${pct.toFixed(1)}% streamed</div>`;
       el.addEventListener("mousemove", (ev) => {
@@ -767,6 +802,7 @@ if (window.ethereum) {
   $("cStop").value = e.toISOString().slice(0, 16);
   updateRate();
 })();
+applyTokenLabels();
 loadInfo();
 </script>
 </body>

@@ -2,12 +2,12 @@
 
 Adversarial self-audit of the two contracts (`AgentBond`, `StreamPay`) using Foundry. Method: full unit + adversarial suites, reentrancy attacker tokens, fee-on-transfer tokens, and a stateful solvency **invariant** (random multi-actor call sequences). All amounts are micro-USDC (6 decimals).
 
-**Verdict: no critical or high-severity findings.** Both contracts are solvent under fuzzing, reentrancy-safe, and access-controlled. One low-severity view-correctness bug was found and fixed; one medium design gap is documented with a recommendation.
+**Verdict: no critical or high-severity findings.** Both contracts are solvent under fuzzing, reentrancy-safe, and access-controlled. One low-severity view-correctness bug was found and fixed; one medium design gap (indefinite-lock griefing) was found, fixed, and the fix is deployed.
 
 | Severity | Finding | Status |
 |---|---|---|
 | 🟢 Low | StreamPay: `recipientBalance`/`senderBalance` reported phantom funds for a *terminal* (cancelled) stream | **Fixed** + regression test |
-| 🟡 Medium (design) | AgentBond: an approved enforcer can lock bond **indefinitely** (no obligation expiry) — griefing | Documented; fix recommended |
+| 🟡 Medium (design) | AgentBond: an approved enforcer could lock bond **indefinitely** (no obligation expiry) — griefing | **Fixed** (optional deadline + agent self-release, deployed) |
 | ⚪ By-design | Approving an enforcer grants it full lock+slash power (ERC-20 `approve` trust model) | Accepted risk, documented |
 
 ---
@@ -50,13 +50,13 @@ StreamPay carries an equivalent per-stream solvency property (`withdrawn + recip
 
 **Fix:** `streamedTotal` now freezes at `withdrawn` once a stream is `Ended`; `recipientBalance` and `senderBalance` return `0` for any non-`Active` stream. Regression tests `test_views_zeroAfterCancel` and `test_views_zeroAfterFullWithdraw` lock the behavior.
 
-### 🟡 MEDIUM (design) — AgentBond obligations never expire
+### 🟡 MEDIUM (design) — AgentBond obligations never expire *(fixed, deployed)*
 
-An enforcer that an agent has approved can call `lock` and then simply never `release` or `slash`. That slice of the agent's bond stays locked forever; the agent has no way to force-reclaim it. Unlike `slash`, this benefits no one — it is pure griefing by a misbehaving (but previously trusted) enforcer.
+**Before:** an enforcer that an agent had approved could call `lock` and then simply never `release` or `slash`. That slice of the agent's bond stayed locked forever; the agent had no way to force-reclaim it. Unlike `slash`, this benefits no one — it is pure griefing by a misbehaving (but previously trusted) enforcer.
 
-**Why it's not critical:** it cannot move funds anywhere, and it only affects bond the agent voluntarily exposed to that specific enforcer. But it's a liveness gap worth closing.
+**Why it was not critical:** it cannot move funds anywhere, and it only affects bond the agent voluntarily exposed to that specific enforcer. But it's a liveness gap worth closing.
 
-**Recommendation:** add an optional `deadline` to an obligation; after it passes with no resolution, allow the *agent* to self-`release` (unlock without slashing). This preserves the enforcer's window to act while removing the indefinite-lock vector. (Feature change → requires redeploy.)
+**Fix (deployed):** `lock(agent, creditor, amount, deadline)` now takes an optional `deadline` (unix seconds; `0` = no expiry). Once a non-zero deadline has passed with no resolution, the *agent* can call `release(id)` itself to unlock the bond without slashing — `release` authorizes either the opening enforcer **or** `msg.sender == agent && deadline != 0 && block.timestamp > deadline`. This preserves the enforcer's window to act while removing the indefinite-lock vector; the `Locked` event carries the `deadline` for off-chain monitoring. The deployed AgentBond (`0xB9b4…f8e0`) contains this code and is source-verified on arcscan.
 
 ### ⚪ BY-DESIGN — enforcer approval is full trust
 
