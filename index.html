@@ -304,13 +304,13 @@
       <div class="chips" style="margin-bottom:16px;">
         <span>USDC</span>
         <span>Arc L1 (USDC gas)</span>
-        <span class="muted">Circle Wallets *</span>
+        <span>Circle Wallets</span>
         <span class="muted">Nanopayments *</span>
       </div>
       <ul>
         <li><span class="ck">◆</span><span><b>USDC</b> — the settlement rail for both bonds and streams. All value in the stack is USDC.</span></li>
         <li><span class="ck">◆</span><span><b>Arc</b> — deterministic finality and USDC-denominated fees let an agent budget, pay gas, and settle in one unit.</span></li>
-        <li><span class="ck">◆</span><span><b>Circle Wallets *</b> — the intended key-management layer for agent-initiated transactions (architecture-level).</span></li>
+        <li><span class="ck">◆</span><span><b>Circle Wallets</b> — <b>live.</b> The agent signs its Arc transactions through a Circle Developer-Controlled Wallet — no private key on disk touches the chain. A full lifecycle (<a href="https://testnet.arcscan.app/tx/0x05349563271e35e9b79d66116cd5d84ca65cff8032bce41fa937ff29dca8be03" style="color:var(--muted);">approve</a> → <a href="https://testnet.arcscan.app/tx/0x59a8a0d095ca745ee2f37f0abfcdc631852707ced7d8e8a1128ebd42f09220ab" style="color:var(--muted);">bond</a> → <a href="https://testnet.arcscan.app/tx/0x2f96d176d5904278806259cd4b96a38d1f0550e078fc953878028bb7b55d7302" style="color:var(--muted);">stream</a>) was signed by Circle wallet <code>0xdFDa…F46b</code> on Arc Testnet.</span></li>
         <li><span class="ck">◆</span><span><b>Nanopayments *</b> — a natural fit for sub-cent, high-frequency stream withdrawals at scale (architecture-level).</span></li>
       </ul>
       <p style="font-size:11.5px; color:var(--faint); margin:14px 0 0;">* Integrated at the architecture level for this testnet demo; the live contracts use USDC on Arc directly.</p>

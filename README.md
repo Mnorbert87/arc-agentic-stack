@@ -85,10 +85,23 @@ Concrete fits from the Track 4 brief: **pay-per-inference agents**, **per-API-ca
 |---|---|---|
 | **USDC** | The settlement rail for *both* bonds and streams. All value in the stack is USDC. | ✅ Live on testnet |
 | **Arc** | Deterministic finality + USDC-denominated fees let an agent budget, pay gas, post bond and settle in one unit. | ✅ Live on testnet |
-| **Circle Wallets** | Intended key-management layer for agent-initiated transactions. | 🧩 Architecture-level |
+| **Circle Wallets** | Agent-held key management: the agent (Aiden) signs its Arc transactions through a Circle Developer-Controlled Wallet — no private key on disk ever touches the chain. | ✅ Live on testnet |
 | **Nanopayments** | Natural fit for sub-cent, high-frequency stream withdrawals at scale. | 🧩 Architecture-level |
 
 🧩 = integrated at the architecture level for this testnet demo; the live contracts transact USDC on Arc directly.
+
+### Circle Wallets — live agent-signed transactions
+
+A Circle Developer-Controlled Wallet (`0xdFDaDEb7440f1CE4Cc2f62Aa21BCCe3374bDF46b`, provisioned on `ARC-TESTNET`) signs a full lifecycle against the live contracts. Circle holds the key; the agent authorizes each call with the registered Entity Secret — so the autonomous agent transacts on Arc without any private key on disk. Verified on testnet:
+
+| Step | Contract call | Tx |
+|---|---|---|
+| Approve | `USDC.approve(StreamPay)` | [`0x053495…be03`](https://testnet.arcscan.app/tx/0x05349563271e35e9b79d66116cd5d84ca65cff8032bce41fa937ff29dca8be03) |
+| Approve | `USDC.approve(AgentBond)` | [`0xfb90ad…4277`](https://testnet.arcscan.app/tx/0xfb90ad375c089cf1db78f59beaf4c5ad9f07958311248c9815b4bb2291c74277) |
+| Bond | `AgentBond.deposit(1 USDC)` | [`0x59a8a0…20ab`](https://testnet.arcscan.app/tx/0x59a8a0d095ca745ee2f37f0abfcdc631852707ced7d8e8a1128ebd42f09220ab) |
+| Stream | `StreamPay.createStream(1 USDC / 120s)` | [`0x2f96d1…7302`](https://testnet.arcscan.app/tx/0x2f96d176d5904278806259cd4b96a38d1f0550e078fc953878028bb7b55d7302) |
+
+Circle's `estimateContractExecutionFee` and `createContractExecutionTransaction` work against Arc's USDC-as-gas model with no special-casing beyond the `ARC-TESTNET` chain identifier.
 
 ---
 
@@ -183,7 +196,7 @@ We deliberately built on **USDC + Arc only** for the trust path, and reserved **
 
 1. Ship a tiny **`@circle/arc` quickstart** that bakes in chain id, RPC, explorer, USDC address, and the decimal helper — the four things every team re-derives by hand.
 2. Provide a **canonical testnet USDC** address in the docs header (we hardcoded ours from on-chain reads; a documented constant removes guesswork).
-3. Publish a reference pattern for **agent-held keys via Circle Wallets** signing Arc transactions — that's the missing primitive between "smart contract" and "autonomous agent," and an official pattern would unblock the whole Track 4 category.
+3. Publish a first-class reference pattern for **agent-held keys via Circle Wallets** signing Arc transactions. We wired this ourselves (see the live-tx table above) and it worked with no Arc-specific special-casing — but it's the missing primitive between "smart contract" and "autonomous agent," so an official, documented pattern would unblock the whole Track 4 category for every team.
 
 ---
 
@@ -197,6 +210,7 @@ arc-agentic-stack/
 ├── stream-pay/             # StreamPay frontend (index.html)
 ├── use-case/               # "Hire an AI service agent" walkthrough (index.html)
 ├── sdk/                    # ethers v6 SDK (bond + stream in ~10 lines)
+├── agent/                  # Aiden — runs the lifecycle; Circle-Wallet-signed Arc txs
 ├── demo/                   # commerce-scenario.js — runnable end-to-end flow
 ├── x402-demo/              # x402 pay-per-call API, settled per second on StreamPay
 └── contracts/              # Foundry projects (src, test, script)
