@@ -1,0 +1,38 @@
+{
+  "name": "arc-agentic-stack-sdk",
+  "version": "0.1.0",
+  "description": "Tiny ethers v6 SDK for the Arc Agentic Stack — AgentBond (reputation-backed trust) + StreamPay (continuous USDC settlement) on Arc testnet.",
+  "type": "module",
+  "main": "arc-agentic-stack.js",
+  "module": "arc-agentic-stack.js",
+  "exports": {
+    ".": "./arc-agentic-stack.js"
+  },
+  "files": [
+    "arc-agentic-stack.js",
+    "README.md"
+  ],
+  "scripts": {
+    "example": "node example.js"
+  },
+  "keywords": [
+    "arc",
+    "circle",
+    "usdc",
+    "ethers",
+    "agent",
+    "escrow",
+    "payment-streaming",
+    "stablecoin",
+    "agentic"
+  ],
+  "license": "MIT",
+  "homepage": "https://mnorbert87.github.io/arc-agentic-stack/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Mnorbert87/arc-agentic-stack"
+  },
+  "peerDependencies": {
+    "ethers": "^6.13.0"
+  }
+}

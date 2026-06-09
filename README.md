@@ -118,6 +118,26 @@ cd web && python3 -m http.server 8080
 
 Each frontend is a single `index.html` using `ethers` from a CDN — no install, no bundler, host anywhere static.
 
+### SDK (one-import integration)
+
+For agents and backends, [`sdk/`](./sdk/) is a tiny [ethers v6](https://docs.ethers.org/v6/)
+wrapper with the addresses, chain id, and USDC decimals baked in — so a team integrates the
+whole stack in ~10 lines without re-deriving any Arc constants:
+
+```js
+import { ethers } from "ethers";
+import { ArcAgenticStack } from "./sdk/arc-agentic-stack.js";
+
+const agent = new ethers.Wallet(process.env.AGENT_KEY, ArcAgenticStack.provider());
+const arc   = new ArcAgenticStack(agent);
+
+await arc.bond("5");                                                       // post 5 USDC of trust
+const { id } = await arc.createStream(CLIENT, "2", { durationSeconds: 3600, memo: "api work" });
+```
+
+`node sdk/example.js` runs a read-only snapshot against live testnet (no key needed). Full API in
+[`sdk/README.md`](./sdk/README.md).
+
 ---
 
 ## Circle Product Feedback
@@ -154,6 +174,7 @@ arc-agentic-stack/
 ├── architecture.png        # the diagram above
 ├── agent-bond/             # AgentBond frontend (index.html)
 ├── stream-pay/             # StreamPay frontend (index.html)
+├── sdk/                    # ethers v6 SDK (bond + stream in ~10 lines)
 └── contracts/              # Foundry projects (src, test, script)
 ```
 
