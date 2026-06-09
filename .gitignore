@@ -1,0 +1,9 @@
+# Foundry build artifacts & deps
+**/out/
+**/cache/
+**/broadcast/
+**/lib/
+# secrets
+**/.env
+*.key
+.DS_Store
