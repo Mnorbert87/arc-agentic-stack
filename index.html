@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Arc Agentic Stack — USDC primitives for autonomous agents</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#060912;--ink:#eef3fb;--muted:#8c98af;--faint:#525d72;--line:rgba(255,255,255,0.065);--line-2:rgba(122,170,255,0.20);--glass:rgba(255,255,255,0.022);--glass-2:rgba(255,255,255,0.05);--c1:#4da2ff;--c2:#56cfe1;--c3:#2f6bff;--good:#4fd6a8;--r:16px;--ease:cubic-bezier(.22,.61,.36,1);}
+  *{box-sizing:border-box;} html,body{height:100%;}
+  body{margin:0;color:var(--ink);background:var(--bg);font-family:"Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.55;overflow-x:hidden;}
+  .aurora{position:fixed;inset:0;z-index:-3;overflow:hidden;background:radial-gradient(1000px 560px at 50% -10%,rgba(77,162,255,0.20),transparent 60%),radial-gradient(760px 540px at 88% 112%,rgba(47,107,255,0.16),transparent 60%),radial-gradient(620px 480px at 8% 40%,rgba(86,207,225,0.10),transparent 60%),var(--bg);}
+  .aurora::before{content:"";position:absolute;width:620px;height:620px;left:50%;top:-140px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(circle,rgba(86,207,225,0.26),transparent 62%);filter:blur(80px);animation:pulse 13s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:.5;transform:translateX(-50%) scale(1);}50%{opacity:.85;transform:translateX(-50%) scale(1.14);}}
+  .grain{position:fixed;inset:0;z-index:-2;pointer-events:none;opacity:.4;background-image:linear-gradient(rgba(122,170,255,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(122,170,255,0.05) 1px,transparent 1px);background-size:56px 56px;-webkit-mask-image:radial-gradient(circle at 50% 26%,#000 0%,transparent 76%);mask-image:radial-gradient(circle at 50% 26%,#000 0%,transparent 76%);}
+  main{max-width:1040px;margin:0 auto;padding:64px 22px 90px;}
+  .eyebrow{display:inline-block;font-size:11.5px;letter-spacing:2.6px;text-transform:uppercase;color:var(--c2);border:1px solid var(--line-2);border-radius:999px;padding:7px 15px;background:var(--glass);margin-bottom:22px;}
+  h1{font-family:"Space Grotesk";font-weight:700;font-size:clamp(34px,6vw,62px);line-height:1.03;margin:0 0 18px;letter-spacing:-1.8px;background:linear-gradient(110deg,#fff 12%,var(--c2) 42%,var(--c1) 64%,#fff 92%);background-size:220% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 7s linear infinite;}
+  @keyframes shimmer{to{background-position:220% center;}}
+  .lede{color:var(--muted);max-width:660px;font-size:16.5px;margin:0 0 10px;}
+  .sub{color:var(--faint);font-size:13.5px;margin-bottom:40px;}
+  .sub code{color:var(--c2);font-family:ui-monospace,monospace;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:20px;}
+  a.card{display:block;text-decoration:none;color:inherit;background:linear-gradient(180deg,var(--glass-2),var(--glass));border:1px solid var(--line);border-radius:var(--r);padding:26px;transition:.25s var(--ease);position:relative;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,0.32);}
+  a.card::after{content:"";position:absolute;inset:0;border-radius:var(--r);padding:1px;background:linear-gradient(135deg,transparent,var(--c1),var(--c2));opacity:0;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;transition:.25s;}
+  a.card:hover{transform:translateY(-5px);box-shadow:0 26px 60px rgba(0,0,0,0.45);}
+  a.card:hover::after{opacity:.9;}
+  .tag{font-size:11px;color:var(--c2);border:1px solid var(--line-2);border-radius:999px;padding:4px 11px;background:var(--glass);font-weight:600;}
+  .card h2{font-family:"Space Grotesk";font-size:22px;margin:16px 0 6px;letter-spacing:-.4px;}
+  .card p{color:var(--muted);font-size:13.5px;margin:0 0 16px;min-height:62px;}
+  .card .go{color:var(--c2);font-weight:600;font-size:13.5px;}
+  .card .addr{display:block;margin-top:12px;font-family:ui-monospace,monospace;font-size:11px;color:var(--faint);word-break:break-all;}
+  footer{color:var(--faint);font-size:12.5px;margin-top:46px;line-height:2;}
+  footer a{color:var(--muted);text-decoration:none;} footer a:hover{color:var(--c2);}
+</style>
+</head>
+<body>
+<div class="aurora"></div><div class="grain"></div>
+<main>
+  <div class="eyebrow">Stablecoin Commerce Stack Challenge · Circle × Arc</div>
+  <h1>The Arc Agentic Stack</h1>
+  <p class="lede">Three composable, owner-less USDC primitives for autonomous agents and SME commerce — deployed and live on the Arc testnet. Each shares one design: no admin keys, balance-delta custody, USDC as both the rail and the gas.</p>
+  <p class="sub">Arc Testnet · chain <code>5042002</code> · settlement asset <code>USDC</code> · connect MetaMask to interact, or browse read-only.</p>
+
+  <div class="grid">
+    <a class="card" href="./stream-pay/">
+      <span class="tag">Track 4 · Agentic Economy</span>
+      <h2>StreamPay</h2>
+      <p>Continuous USDC payment streams — pay an agent by the second, meter an API by usage, settle subscriptions and vesting in real time. Withdraw what's streamed anytime; cancel splits the rest fairly.</p>
+      <span class="go">Open demo →</span>
+      <span class="addr">0x072599dd2121b9b5b9b59cebe0c9e32c5ea00789</span>
+    </a>
+    <a class="card" href="./agent-bond/">
+      <span class="tag">Track 4 · Agentic Economy</span>
+      <h2>AgentBond</h2>
+      <p>Reputation-backed credit for agents. An agent posts a USDC bond and grants protocols the right to slash it — the shared enforcement layer beneath uncollateralized agent credit, marketplaces, and on-chain insurance.</p>
+      <span class="go">Open demo →</span>
+      <span class="addr">0xb70f607de14afd682cc834352460a664e25e1dcb</span>
+    </a>
+    <a class="card" href="./commit-stake/">
+      <span class="tag">Track 2 · SME Trade Finance</span>
+      <h2>CommitStake</h2>
+      <p>Milestone-based USDC escrow. Lock a stake behind a commitment; a verifier marks pass or fail before the deadline. Succeed and reclaim it, fail or expire and it's slashed to the beneficiary.</p>
+      <span class="go">Open demo →</span>
+      <span class="addr">0xc307d9287707Ba04c03Dd653b4457E949129A9a2</span>
+    </a>
+  </div>
+
+  <footer>
+    Built for the Ignyte Stablecoin Commerce Stack Challenge — technical sponsors Circle &amp; Arc.<br>
+    For educational and testnet demo purposes only. Explorer: <a href="https://testnet.arcscan.app" target="_blank" rel="noopener">testnet.arcscan.app</a>
+  </footer>
+</main>
+</body>
+</html>

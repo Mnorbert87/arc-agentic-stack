@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>StreamPay — Arc Testnet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060912;
+    --bg-2: #0a0f1e;
+    --ink: #eef3fb;
+    --muted: #8c98af;
+    --faint: #525d72;
+    --line: rgba(255,255,255,0.065);
+    --line-2: rgba(122,170,255,0.20);
+    --glass: rgba(255,255,255,0.022);
+    --glass-2: rgba(255,255,255,0.05);
+    --c1: #4da2ff;
+    --c2: #56cfe1;
+    --c3: #2f6bff;
+    --good: #4fd6a8;
+    --bad: #ff7a7a;
+    --warn: #ffc266;
+    --r: 16px;
+    --ease: cubic-bezier(.22,.61,.36,1);
+    font-synthesis: none;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; color: var(--ink); background: var(--bg);
+    font-family: "Inter", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; line-height: 1.55; overflow-x: hidden;
+  }
+  ::selection { background: rgba(86,207,225,0.28); color: #fff; }
+  ::-webkit-scrollbar { width: 11px; height: 11px; }
+  ::-webkit-scrollbar-thumb { background: rgba(122,170,255,0.18); border-radius: 99px; border: 3px solid var(--bg); }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(122,170,255,0.32); }
+
+  .aurora { position: fixed; inset: 0; z-index: -3; overflow: hidden;
+    background:
+      radial-gradient(1000px 560px at 50% -10%, rgba(77,162,255,0.20), transparent 60%),
+      radial-gradient(760px 540px at 88% 112%, rgba(47,107,255,0.16), transparent 60%),
+      radial-gradient(620px 480px at 8% 40%, rgba(86,207,225,0.10), transparent 60%),
+      var(--bg); }
+  .aurora::before { content: ""; position: absolute; width: 620px; height: 620px;
+    left: 50%; top: -140px; transform: translateX(-50%); border-radius: 50%;
+    background: radial-gradient(circle, rgba(86,207,225,0.26), transparent 62%);
+    filter: blur(80px); animation: pulse 13s ease-in-out infinite; }
+  .aurora::after { content: ""; position: absolute; inset: -40%;
+    background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(77,162,255,0.05) 80deg, transparent 160deg, rgba(86,207,225,0.05) 250deg, transparent 360deg);
+    animation: spin 60s linear infinite; opacity: .6; }
+  @keyframes pulse { 0%,100%{ opacity:.5; transform:translateX(-50%) scale(1);} 50%{ opacity:.85; transform:translateX(-50%) scale(1.14);} }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .grain { position: fixed; inset: 0; z-index: -2; pointer-events: none; opacity: .45;
+    background-image:
+      linear-gradient(rgba(122,170,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(122,170,255,0.05) 1px, transparent 1px);
+    background-size: 56px 56px; background-position: center;
+    -webkit-mask-image: radial-gradient(circle at 50% 26%, #000 0%, transparent 76%);
+    mask-image: radial-gradient(circle at 50% 26%, #000 0%, transparent 76%); }
+  .noise { position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .035; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  header {
+    position: sticky; top: 0; z-index: 30;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 15px 30px; border-bottom: 1px solid var(--line);
+    background: rgba(5,7,15,0.5); backdrop-filter: blur(20px) saturate(150%);
+  }
+  .brand { display: flex; align-items: center; gap: 13px; }
+  .logo {
+    width: 40px; height: 40px; border-radius: 12px; position: relative;
+    background: linear-gradient(135deg, var(--c1), var(--c2)); display: grid; place-items: center;
+    box-shadow: 0 8px 26px rgba(91,140,255,0.5), inset 0 0 0 1px rgba(255,255,255,0.25);
+    animation: float 5s ease-in-out infinite;
+  }
+  .logo::after { content:""; position:absolute; inset:-2px; border-radius:14px; background: linear-gradient(135deg, var(--c2), var(--c1));
+    filter: blur(11px); opacity:.55; z-index:-1; animation: glow 4s ease-in-out infinite; }
+  @keyframes float { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-3px);} }
+  @keyframes glow { 0%,100%{ opacity:.4;} 50%{ opacity:.75;} }
+  .logo svg { width: 22px; height: 22px; }
+  .brand h1 { font-family: "Space Grotesk"; font-size: 17px; margin: 0; letter-spacing: -.2px; font-weight: 600; }
+  .brand small { color: var(--muted); font-size: 11.5px; }
+  .net-badge {
+    font-size: 11px; color: var(--c2); display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid var(--line-2); border-radius: 999px; padding: 6px 12px; background: var(--glass);
+  }
+  .net-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); box-shadow: 0 0 8px currentColor; }
+  .net-badge.ok { color: var(--good); } .net-badge.ok .dot { background: var(--good); animation: blink 2s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{ opacity:1;} 50%{ opacity:.45;} }
+
+  button {
+    font: inherit; font-weight: 600; cursor: pointer; border-radius: 12px;
+    border: 1px solid var(--line-2); background: var(--glass-2); color: var(--ink);
+    padding: 11px 17px; transition: .2s var(--ease); position: relative; overflow: hidden;
+  }
+  button:hover { border-color: rgba(91,140,255,0.6); transform: translateY(-1px); }
+  button::after { content:""; position:absolute; top:0; left:-120%; width:60%; height:100%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,0.22), transparent); transform: skewX(-18deg); transition: left .55s var(--ease); }
+  button:hover::after { left: 140%; }
+  button.primary {
+    border: none; color: #04111f;
+    background: linear-gradient(135deg, var(--c2), var(--c1));
+    box-shadow: 0 10px 28px rgba(54,160,255,0.35), inset 0 0 0 1px rgba(255,255,255,0.2);
+  }
+  button.primary:hover { filter: brightness(1.07); box-shadow: 0 14px 34px rgba(54,160,255,0.46); }
+  button.good { border: none; color: #042016; background: linear-gradient(135deg, #5be3b0, #2fbf8c); box-shadow: 0 8px 22px rgba(79,214,168,0.3); }
+  button.bad  { border: none; color: #2a0710; background: linear-gradient(135deg, #ff9a9a, #e0556b); box-shadow: 0 8px 22px rgba(224,85,107,0.3); }
+  button:disabled { opacity: .32; cursor: not-allowed; transform: none; box-shadow: none; }
+  button:disabled::after { display: none; }
+
+  main { max-width: 1020px; margin: 0 auto; padding: 46px 22px 90px; }
+
+  .rise { opacity: 0; transform: translateY(16px); animation: rise .7s var(--ease) forwards; }
+  .rise.d1 { animation-delay: .05s; } .rise.d2 { animation-delay: .13s; }
+  .rise.d3 { animation-delay: .21s; } .rise.d4 { animation-delay: .29s; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  .hero { text-align: center; margin: 10px 0 34px; }
+  .hero .eyebrow {
+    display: inline-block; font-size: 11.5px; letter-spacing: 2.6px; text-transform: uppercase;
+    color: var(--c2); border: 1px solid var(--line-2); border-radius: 999px; padding: 7px 15px;
+    background: var(--glass); margin-bottom: 20px; position: relative;
+  }
+  .hero h2 {
+    font-family: "Space Grotesk"; font-weight: 700; font-size: clamp(32px, 5.4vw, 56px);
+    line-height: 1.04; margin: 0 0 16px; letter-spacing: -1.6px;
+    background: linear-gradient(110deg, #ffffff 12%, var(--c2) 42%, var(--c1) 64%, #ffffff 92%);
+    background-size: 220% auto;
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    animation: shimmer 7s linear infinite;
+  }
+  @keyframes shimmer { to { background-position: 220% center; } }
+  .hero p { color: var(--muted); max-width: 600px; margin: 0 auto; font-size: 15.5px; }
+
+  .stat-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin: 6px 0; }
+  .stat { background: linear-gradient(180deg, var(--glass-2), var(--glass)); border: 1px solid var(--line);
+    border-radius: var(--r); padding: 20px 16px; text-align: center; position: relative; overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+  .stat::before { content:""; position:absolute; inset:0 0 auto 0; height:1px; background: linear-gradient(90deg, transparent, var(--line-2), transparent); }
+  .stat b { font-family: "Space Grotesk"; font-size: 26px; display: block; letter-spacing: -.5px;
+    background: linear-gradient(120deg, #fff, var(--c2)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .stat small { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .7px; }
+
+  .settings-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    font-size: 12px; color: var(--muted); justify-content: center; margin: 22px 0 4px; }
+  .settings-bar .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 13px;
+    border: 1px solid var(--line); border-radius: 999px; background: var(--glass); transition: .18s; }
+  .settings-bar .chip:hover { border-color: var(--line-2); }
+  .settings-bar code { color: var(--c2); font-family: ui-monospace, monospace; }
+  .settings-bar button { padding: 6px 13px; font-size: 12px; }
+
+  .tabs-wrap { display: flex; justify-content: center; }
+  .tabs { display: inline-flex; gap: 4px; padding: 6px; border-radius: 999px;
+    border: 1px solid var(--line); background: rgba(255,255,255,0.03); margin: 28px auto; flex-wrap: wrap; justify-content: center;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04); }
+  .tab { padding: 10px 19px; border-radius: 999px; background: transparent; border: none;
+    color: var(--muted); font-weight: 600; font-size: 14px; transition: .2s var(--ease); }
+  .tab::after { display: none; }
+  .tab:hover { transform: none; color: var(--ink); }
+  .tab.active { color: #04111f; background: linear-gradient(135deg, var(--c2), var(--c1));
+    box-shadow: 0 8px 22px rgba(54,160,255,0.34); }
+
+  .panel {
+    background: linear-gradient(180deg, var(--glass-2), var(--glass)); border: 1px solid var(--line);
+    border-radius: var(--r); padding: 26px; margin-bottom: 18px;
+    backdrop-filter: blur(10px); position: relative; overflow: hidden;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.32);
+  }
+  .panel::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--line-2), transparent); }
+  .panel h3 { font-family: "Space Grotesk"; margin: 0 0 6px; font-size: 20px; font-weight: 600; letter-spacing: -.3px; }
+  .panel .hint { color: var(--muted); margin: 0 0 18px; font-size: 13.5px; }
+  .panel .hint code { color: var(--c2); background: var(--glass-2); padding: 2px 7px; border-radius: 7px; font-size: 12px; }
+
+  label { display: block; font-size: 12px; color: var(--muted); margin: 15px 0 7px; font-weight: 600; letter-spacing: .2px; }
+  input {
+    width: 100%; font: inherit; color: var(--ink);
+    background: rgba(0,0,0,0.28); border: 1px solid var(--line-2);
+    border-radius: 12px; padding: 13px 15px; outline: none; transition: .18s var(--ease);
+  }
+  input::placeholder { color: var(--faint); }
+  input:focus { border-color: var(--c1); box-shadow: 0 0 0 4px rgba(91,140,255,0.16); background: rgba(0,0,0,0.4); }
+  .row { display: flex; gap: 15px; flex-wrap: wrap; }
+  .row > div { flex: 1; min-width: 200px; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; align-items: center; }
+  .mini { font-size: 12px; padding: 8px 13px; }
+
+  .kv { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .kv:last-of-type { border-bottom: none; }
+  .kv span:first-child { color: var(--muted); }
+  .kv span:last-child { font-family: ui-monospace, monospace; word-break: break-all; text-align: right; }
+  .addr { color: var(--c1); }
+
+  /* live streaming progress */
+  .flow { margin: 20px 0 6px; }
+  .flow-bar { height: 12px; border-radius: 999px; background: rgba(0,0,0,0.35);
+    border: 1px solid var(--line-2); overflow: hidden; position: relative; }
+  .flow-fill { height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--c3), var(--c1), var(--c2));
+    background-size: 200% 100%; animation: flowmove 2.4s linear infinite;
+    box-shadow: 0 0 18px rgba(86,207,225,0.5); transition: width .5s linear; }
+  @keyframes flowmove { to { background-position: -200% 0; } }
+  .flow-nums { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 9px; }
+  .flow-nums b { font-family: "Space Grotesk"; color: var(--c2); }
+  .live-amt { font-family: "Space Grotesk"; font-size: 30px; letter-spacing: -.5px; text-align: center; margin: 4px 0 2px;
+    background: linear-gradient(120deg, #fff, var(--c2)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .live-cap { text-align: center; font-size: 11px; color: var(--faint); text-transform: uppercase; letter-spacing: .8px; }
+
+  .badge { font-size: 11px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line-2); color: var(--muted); font-weight: 600; letter-spacing: .3px; }
+  .badge.Active { color: var(--c2); border-color: rgba(86,207,225,0.55); box-shadow: 0 0 14px rgba(86,207,225,0.14); }
+  .badge.Ended { color: var(--faint); border-color: var(--line); }
+  .badge.Pending { color: var(--warn); border-color: rgba(255,194,102,0.5); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 16px; margin-top: 20px; }
+  .card {
+    background: linear-gradient(180deg, var(--glass-2), var(--glass)); border: 1px solid var(--line); border-radius: var(--r);
+    padding: 20px; cursor: pointer; transition: .25s var(--ease); position: relative; overflow: hidden;
+  }
+  .card::before { content:""; position:absolute; inset:0; opacity:0; transition: opacity .25s;
+    background: radial-gradient(420px circle at var(--mx,50%) var(--my,0%), rgba(86,207,225,0.14), transparent 42%); }
+  .card:hover::before { opacity: 1; }
+  .card::after { content: ""; position: absolute; inset: 0; border-radius: var(--r); padding: 1px;
+    background: linear-gradient(135deg, transparent, var(--c1), var(--c2)); opacity: 0;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude; transition: .25s; }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 22px 48px rgba(0,0,0,0.4); }
+  .card:hover::after { opacity: .85; }
+  .card .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; position: relative; }
+  .card .id { font-family: "Space Grotesk"; font-size: 13px; color: var(--c2); font-weight: 600; }
+  .card .amt { font-family: "Space Grotesk"; font-size: 22px; margin: 2px 0 10px; position: relative; letter-spacing: -.4px; }
+  .card .meta { font-size: 11.5px; color: var(--faint); font-family: ui-monospace, monospace; line-height: 1.9; position: relative; }
+  .card .mini-bar { height: 6px; border-radius: 999px; background: rgba(0,0,0,0.35); overflow: hidden; margin: 10px 0 4px; }
+  .card .mini-fill { height: 100%; background: linear-gradient(90deg, var(--c3), var(--c2)); }
+  .empty { text-align: center; color: var(--muted); padding: 44px 0; font-size: 14px; }
+  .dir-head { display: flex; justify-content: space-between; align-items: center; }
+  .count-pill { font-size: 12px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line-2);
+    color: var(--c2); background: var(--glass); font-weight: 600; }
+  .roleHint { font-size: 12.5px; color: var(--c2); margin-top: 16px; min-height: 16px; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(22px);
+    background: rgba(10,16,30,0.92); border: 1px solid var(--line-2); padding: 14px 21px; border-radius: 14px;
+    font-size: 13px; z-index: 50; max-width: 90vw; box-shadow: 0 18px 46px rgba(0,0,0,0.6); backdrop-filter: blur(12px);
+    opacity: 0; pointer-events: none; transition: .3s var(--ease); }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.good { border-color: rgba(54,224,160,0.6); } .toast.bad { border-color: rgba(255,122,122,0.6); }
+  .toast a { color: var(--c2); }
+
+  footer { text-align: center; color: var(--faint); font-size: 12px; padding: 26px; }
+  footer a { color: var(--muted); text-decoration: none; }
+  footer a:hover { color: var(--c2); }
+  .about p { color: var(--muted); font-size: 14px; }
+  .about .step { display: flex; gap: 15px; margin: 18px 0; }
+  .about .num { flex: 0 0 32px; height: 32px; border-radius: 10px; display: grid; place-items: center;
+    font-family: "Space Grotesk"; font-weight: 700; color: #04111f; background: linear-gradient(135deg, var(--c2), var(--c1));
+    box-shadow: 0 6px 16px rgba(54,160,255,0.32); }
+  .about .step b { color: var(--ink); }
+  .preset-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .preset-row button { padding: 7px 12px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="aurora"></div>
+<div class="grain"></div>
+<div class="noise"></div>
+
+<header>
+  <div class="brand">
+    <div class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h5l2-5 3 10 2-5h4" stroke="#04111f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div>
+      <h1>StreamPay</h1>
+      <small>continuous USDC payments on Arc</small>
+    </div>
+  </div>
+  <div style="display:flex; align-items:center; gap:12px;">
+    <span id="netBadge" class="net-badge"><span class="dot"></span>not connected</span>
+    <button id="connectBtn" class="primary">Connect Wallet</button>
+  </div>
+</header>
+
+<main>
+  <div class="hero rise">
+    <div class="eyebrow">Arc Testnet · USDC-native · Agentic</div>
+    <h2>Money that flows<br>by the second</h2>
+    <p>Lock USDC and stream it to anyone in real time — agent salaries, pay-per-inference, metered APIs, subscriptions, vesting. The recipient withdraws what has streamed at any moment; either party can cancel and split the rest fairly. A public primitive for Arc's agentic economy.</p>
+  </div>
+
+  <div class="stat-row rise d1">
+    <div class="stat"><b id="sTotal">—</b><small>Streams opened</small></div>
+    <div class="stat"><b id="sLocked">—</b><small>USDC streaming now</small></div>
+    <div class="stat"><b id="sMine">—</b><small>Your USDC</small></div>
+  </div>
+
+  <div class="settings-bar rise d2">
+    <span class="chip">Contract <code id="spChip">—</code></span>
+    <span class="chip">USDC <code id="usdcChip">—</code></span>
+    <button id="editAddrBtn" class="mini">Change</button>
+    <a id="explorer" class="chip" target="_blank" rel="noopener" style="text-decoration:none;color:var(--c2)">arcscan ↗</a>
+  </div>
+
+  <div class="tabs-wrap rise d3">
+    <div class="tabs">
+      <button class="tab active" data-tab="create">Open stream</button>
+      <button class="tab" data-tab="manage">Manage</button>
+      <button class="tab" data-tab="browse">Browse</button>
+      <button class="tab" data-tab="about">How it works</button>
+    </div>
+  </div>
+
+  <div class="rise d4">
+  <!-- CREATE -->
+  <section id="tab-create">
+    <div class="panel">
+      <h3>Open a payment stream</h3>
+      <p class="hint">Approves USDC, then locks it. It accrues to the <code>recipient</code> linearly between <code>start</code> and <code>stop</code>. They withdraw whatever has streamed, whenever they want.</p>
+      <div class="row">
+        <div>
+          <label>Recipient address</label>
+          <input id="cRecipient" spellcheck="false" placeholder="0x… who gets paid" />
+        </div>
+        <div>
+          <label>Amount (USDC)</label>
+          <input id="cAmount" type="number" min="0" step="0.000001" placeholder="10" />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Start</label>
+          <input id="cStart" type="datetime-local" />
+        </div>
+        <div>
+          <label>Stop</label>
+          <input id="cStop" type="datetime-local" />
+        </div>
+      </div>
+      <div class="preset-row">
+        <span style="font-size:12px;color:var(--faint);align-self:center;">Quick window:</span>
+        <button class="mini" data-dur="3600">1 hour</button>
+        <button class="mini" data-dur="86400">1 day</button>
+        <button class="mini" data-dur="2592000">30 days</button>
+        <button class="mini" data-dur="300">5 min (demo)</button>
+      </div>
+      <label>Memo</label>
+      <input id="cMemo" placeholder="e.g. June API retainer, agent-7 salary" />
+      <div class="actions">
+        <button id="rateHint" class="mini" disabled style="opacity:.7;">rate —</button>
+        <button id="createBtn" class="primary" style="margin-left:auto;">Approve &amp; Open stream</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- MANAGE -->
+  <section id="tab-manage" style="display:none;">
+    <div class="panel">
+      <h3>Manage a stream</h3>
+      <p class="hint">Load by ID to see it flow live, withdraw streamed funds, or cancel. Buttons enable only for your role.</p>
+      <div class="row">
+        <div><label>Stream ID</label><input id="mId" type="number" min="1" placeholder="1" /></div>
+        <div style="display:flex; align-items:flex-end;"><button id="loadBtn" style="width:100%;">Load</button></div>
+      </div>
+      <div id="mDetail" style="display:none; margin-top:18px;">
+        <div class="flow">
+          <div class="live-amt" id="liveAmt">0.000000</div>
+          <div class="live-cap" id="liveCap">withdrawable now</div>
+          <div class="flow-bar" style="margin-top:14px;"><div class="flow-fill" id="flowFill"></div></div>
+          <div class="flow-nums">
+            <span>streamed <b id="fStreamed">0</b></span>
+            <span><b id="fPct">0%</b></span>
+            <span><b id="fDeposit">0</b> total</span>
+          </div>
+        </div>
+        <div class="kv"><span>Status</span><span id="dStatus"></span></div>
+        <div class="kv"><span>Deposit</span><span id="dDeposit"></span></div>
+        <div class="kv"><span>Withdrawn</span><span id="dWithdrawn"></span></div>
+        <div class="kv"><span>Sender</span><span id="dSender" class="addr"></span></div>
+        <div class="kv"><span>Recipient</span><span id="dRecipient" class="addr"></span></div>
+        <div class="kv"><span>Window</span><span id="dWindow"></span></div>
+        <div class="actions">
+          <button id="withdrawBtn" class="good">Withdraw streamed</button>
+          <button id="cancelBtn" class="bad">Cancel stream</button>
+        </div>
+        <div class="roleHint" id="roleHint"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BROWSE -->
+  <section id="tab-browse" style="display:none;">
+    <div class="panel">
+      <div class="dir-head">
+        <h3 style="margin:0;">All streams <span class="count-pill" id="countPill">0</span></h3>
+        <button id="browseBtn" class="mini">↻ Refresh</button>
+      </div>
+      <p class="hint" style="margin-top:10px;">Read straight from the public Arc RPC — no wallet needed. Bars update live.</p>
+      <div id="list" class="grid"></div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="tab-about" style="display:none;">
+    <div class="panel about">
+      <h3>How StreamPay works</h3>
+      <div class="step"><div class="num">1</div><div><b>Open.</b> The sender locks USDC and picks a window (start → stop). The funds accrue to the recipient linearly — second by second.</div></div>
+      <div class="step"><div class="num">2</div><div><b>Withdraw anytime.</b> The recipient pulls whatever has streamed so far, as often as they like. No waiting for the end.</div></div>
+      <div class="step"><div class="num">3</div><div><b>Cancel fairly.</b> Either party can cancel: the recipient keeps everything streamed up to that instant, the sender is refunded the rest. The escrow stays exactly solvent at all times.</div></div>
+      <p style="margin-top:18px;">No owner, no admin keys, no protocol fee. Built for the Arc agentic economy: pay an AI agent per second of work, meter an API by usage, settle subscriptions continuously — all in USDC, the chain's native gas asset.</p>
+    </div>
+  </section>
+  </div>
+
+  <footer>
+    StreamPay · Arc Testnet (chain 5042002) · <a id="footExplorer" target="_blank" rel="noopener">view contract on arcscan</a>
+  </footer>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script type="module">
+import { ethers } from "https://esm.sh/ethers@6.13.4";
+
+const RPC = "https://rpc.testnet.arc.network";
+const CHAIN_ID = 5042002;
+const CHAIN_HEX = "0x" + CHAIN_ID.toString(16);
+const EXPLORER = "https://testnet.arcscan.app";
+const DEFAULT_SP = "0x072599dd2121b9b5b9b59cebe0c9e32c5ea00789";
+
+const SP_ABI = [
+  "function nextId() view returns (uint256)",
+  "function usdc() view returns (address)",
+  "function get(uint256 id) view returns (tuple(address sender,address recipient,uint256 deposit,uint256 withdrawn,uint64 start,uint64 stop,uint8 status))",
+  "function createStream(address recipient,uint256 deposit,uint64 start,uint64 stop,string memo) returns (uint256)",
+  "function withdraw(uint256 id,uint256 amount)",
+  "function cancel(uint256 id)"
+];
+const ERC20_ABI = [
+  "function approve(address spender,uint256 amount) returns (bool)",
+  "function allowance(address owner,address spender) view returns (uint256)",
+  "function balanceOf(address) view returns (uint256)",
+  "function decimals() view returns (uint8)"
+];
+const STATUS = ["None", "Active", "Ended"];
+
+const read = new ethers.JsonRpcProvider(RPC, CHAIN_ID);
+let provider, signer, account, usdcAddr, usdcDecimals = 6;
+let liveStream = null, liveTimer = null;
+
+const $ = (id) => document.getElementById(id);
+const spAddress = () => (localStorage.getItem("sp_addr") || DEFAULT_SP);
+const short = (a) => a ? a.slice(0, 6) + "…" + a.slice(-4) : "—";
+const fmt = (v) => ethers.formatUnits(v, usdcDecimals);
+const nowSec = () => Math.floor(Date.now() / 1000);
+
+// Mirror of the on-chain linear accrual so the UI can tick every frame without an RPC call.
+function streamedAt(s, t) {
+  const dep = BigInt(s.deposit), start = Number(s.start), stop = Number(s.stop);
+  if (t <= start) return 0n;
+  if (t >= stop) return dep;
+  return (dep * BigInt(t - start)) / BigInt(stop - start);
+}
+
+function countTo(el, target, decimals) {
+  const start = parseFloat(el.dataset.v || "0") || 0;
+  const end = Number(target);
+  el.dataset.v = end;
+  const t0 = performance.now(), dur = 700;
+  function step(t) {
+    const k = Math.min(1, (t - t0) / dur);
+    const e = 1 - Math.pow(1 - k, 3);
+    const val = start + (end - start) * e;
+    el.textContent = decimals ? val.toFixed(decimals) : Math.round(val).toString();
+    if (k < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function toast(msg, kind, txHash) {
+  const t = $("toast");
+  t.className = "toast show" + (kind ? " " + kind : "");
+  t.textContent = msg;
+  if (txHash) {
+    t.append(" · ");
+    const a = document.createElement("a");
+    a.href = `${EXPLORER}/tx/${encodeURIComponent(txHash)}`;
+    a.target = "_blank"; a.rel = "noopener"; a.textContent = "tx ↗";
+    t.append(a);
+  }
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => (t.className = "toast"), 9000);
+}
+
+document.querySelectorAll(".tab").forEach((b) => b.onclick = () => {
+  document.querySelectorAll(".tab").forEach((x) => x.classList.remove("active"));
+  b.classList.add("active");
+  ["create", "manage", "browse", "about"].forEach((n) => $("tab-" + n).style.display = "none");
+  $("tab-" + b.dataset.tab).style.display = "block";
+  if (b.dataset.tab === "browse") browse();
+});
+
+function syncChips() {
+  $("spChip").textContent = short(spAddress());
+  $("usdcChip").textContent = usdcAddr ? short(usdcAddr) : "—";
+  $("explorer").href = `${EXPLORER}/address/${spAddress()}`;
+  $("footExplorer").href = `${EXPLORER}/address/${spAddress()}`;
+}
+
+async function loadInfo() {
+  syncChips();
+  if (!ethers.isAddress(spAddress())) return toast("Invalid contract address", "bad");
+  try {
+    const sp = new ethers.Contract(spAddress(), SP_ABI, read);
+    const [next, u] = await Promise.all([sp.nextId(), sp.usdc()]);
+    usdcAddr = u; syncChips();
+    const total = Number(next) - 1;
+    countTo($("sTotal"), total, 0);
+    $("countPill").textContent = total;
+    const erc = new ethers.Contract(u, ERC20_ABI, read);
+    try { usdcDecimals = Number(await erc.decimals()); } catch { usdcDecimals = 6; }
+    let flowing = 0n;
+    if (total > 0) {
+      const ids = []; for (let i = 1; i <= total; i++) ids.push(i);
+      const items = await Promise.all(ids.map((i) => sp.get(i)));
+      const t = nowSec();
+      items.forEach((s) => {
+        if (Number(s.status) === 1) flowing += (BigInt(s.deposit) - streamedAt(s, t));
+      });
+    }
+    countTo($("sLocked"), fmt(flowing), 2);
+    if (account) countTo($("sMine"), fmt(await erc.balanceOf(account)), 2);
+  } catch (e) { toast("Read failed: " + (e.shortMessage || e.message), "bad"); }
+}
+
+async function connect() {
+  if (!window.ethereum) return toast("No wallet found. Install MetaMask.", "bad");
+  provider = new ethers.BrowserProvider(window.ethereum);
+  await provider.send("eth_requestAccounts", []);
+  try {
+    await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: CHAIN_HEX }] });
+  } catch (e) {
+    if (e.code === 4902) {
+      await window.ethereum.request({ method: "wallet_addEthereumChain", params: [{
+        chainId: CHAIN_HEX, chainName: "Arc Testnet",
+        nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 },
+        rpcUrls: [RPC], blockExplorerUrls: [EXPLORER] }] });
+    } else throw e;
+  }
+  signer = await provider.getSigner();
+  account = await signer.getAddress();
+  $("connectBtn").textContent = short(account);
+  $("netBadge").className = "net-badge ok";
+  $("netBadge").innerHTML = '<span class="dot"></span>Arc Testnet';
+  loadInfo();
+}
+function needWallet() { if (!signer) { connect(); return true; } return false; }
+function spWrite() { return new ethers.Contract(spAddress(), SP_ABI, signer); }
+
+async function ensureChain() {
+  const net = await provider.getNetwork();
+  if (Number(net.chainId) === CHAIN_ID) return;
+  await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: CHAIN_HEX }] });
+  signer = await provider.getSigner();
+  account = await signer.getAddress();
+  const after = await provider.getNetwork();
+  if (Number(after.chainId) !== CHAIN_ID) throw new Error("Wrong network — switch to Arc Testnet (chain " + CHAIN_ID + ")");
+}
+
+$("editAddrBtn").onclick = () => {
+  const v = prompt("StreamPay contract address:", spAddress());
+  if (v && ethers.isAddress(v.trim())) { localStorage.setItem("sp_addr", v.trim()); loadInfo(); }
+  else if (v) toast("Invalid address", "bad");
+};
+
+// quick-window presets set stop = start + duration
+document.querySelectorAll(".preset-row button").forEach((b) => b.onclick = () => {
+  const dur = Number(b.dataset.dur);
+  const startV = $("cStart").value ? new Date($("cStart").value) : new Date();
+  if (!$("cStart").value) { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); $("cStart").value = d.toISOString().slice(0,16); }
+  const stop = new Date((($("cStart").value ? new Date($("cStart").value) : startV).getTime()) + dur * 1000);
+  stop.setMinutes(stop.getMinutes() - stop.getTimezoneOffset());
+  $("cStop").value = stop.toISOString().slice(0, 16);
+  updateRate();
+});
+["cAmount","cStart","cStop"].forEach((id) => $(id).addEventListener("input", updateRate));
+
+function updateRate() {
+  const amt = parseFloat($("cAmount").value || "0");
+  const a = $("cStart").value ? new Date($("cStart").value).getTime() / 1000 : 0;
+  const b = $("cStop").value ? new Date($("cStop").value).getTime() / 1000 : 0;
+  if (amt > 0 && b > a) {
+    const perSec = amt / (b - a);
+    let txt;
+    if (perSec >= 1) txt = perSec.toFixed(2) + " USDC/s";
+    else if (perSec * 3600 >= 1) txt = (perSec * 3600).toFixed(3) + " USDC/hr";
+    else txt = (perSec * 86400).toFixed(3) + " USDC/day";
+    $("rateHint").textContent = "rate ≈ " + txt;
+  } else $("rateHint").textContent = "rate —";
+}
+
+$("createBtn").onclick = async () => {
+  if (needWallet()) return;
+  const recipient = $("cRecipient").value.trim();
+  const memo = $("cMemo").value.trim(), amtStr = $("cAmount").value.trim();
+  if (!ethers.isAddress(recipient)) return toast("Invalid recipient address", "bad");
+  if (!amtStr || Number(amtStr) <= 0) return toast("Enter an amount > 0", "bad");
+  if (!$("cStart").value || !$("cStop").value) return toast("Pick a start and stop time", "bad");
+  const start = Math.floor(new Date($("cStart").value).getTime() / 1000);
+  const stop = Math.floor(new Date($("cStop").value).getTime() / 1000);
+  if (stop <= start) return toast("Stop must be after start", "bad");
+  if (stop <= nowSec()) return toast("Stop must be in the future", "bad");
+  const amount = ethers.parseUnits(amtStr, usdcDecimals);
+  try {
+    await ensureChain();
+    const erc = new ethers.Contract(usdcAddr, ERC20_ABI, signer);
+    if ((await erc.allowance(account, spAddress())) < amount) {
+      toast("Approving USDC…");
+      const ax = await erc.approve(spAddress(), amount); await ax.wait();
+      toast("Approved", "good", ax.hash);
+    }
+    toast("Opening stream…");
+    const tx = await spWrite().createStream(recipient, amount, start, stop, memo);
+    const rc = await tx.wait();
+    toast("Stream opened", "good", rc.hash);
+    loadInfo();
+  } catch (e) { toast("Failed: " + (e.shortMessage || e.message), "bad"); }
+};
+
+function tickLive() {
+  if (!liveStream) return;
+  const s = liveStream, t = nowSec();
+  const dep = BigInt(s.deposit), withdrawn = BigInt(s.withdrawn);
+  const streamed = streamedAt(s, t);
+  const available = streamed > withdrawn ? streamed - withdrawn : 0n;
+  const pct = dep > 0n ? Number((streamed * 10000n) / dep) / 100 : 0;
+  $("liveAmt").textContent = fmt(available);
+  $("flowFill").style.width = Math.min(100, pct) + "%";
+  $("fStreamed").textContent = fmt(streamed);
+  $("fDeposit").textContent = fmt(dep);
+  $("fPct").textContent = pct.toFixed(1) + "%";
+  const ended = Number(s.status) === 2;
+  $("flowFill").style.animationPlayState = (ended || t >= Number(s.stop)) ? "paused" : "running";
+}
+
+function renderStream(id, s) {
+  clearInterval(liveTimer);
+  const st = STATUS[Number(s.status)] || "?";
+  const t = nowSec();
+  const pending = Number(s.status) === 1 && t < Number(s.start);
+  const label = pending ? "Pending" : st;
+  $("dStatus").innerHTML = `<span class="badge ${label}">${label}</span>`;
+  $("dDeposit").textContent = fmt(s.deposit) + " USDC";
+  $("dWithdrawn").textContent = fmt(s.withdrawn) + " USDC";
+  $("dSender").textContent = s.sender;
+  $("dRecipient").textContent = s.recipient;
+  $("dWindow").textContent = new Date(Number(s.start)*1000).toLocaleString() + "  →  " + new Date(Number(s.stop)*1000).toLocaleString();
+  $("liveCap").textContent = pending ? "starts " + new Date(Number(s.start)*1000).toLocaleString() : "withdrawable now";
+  $("mDetail").style.display = "block";
+
+  const me = account?.toLowerCase();
+  const active = Number(s.status) === 1;
+  $("withdrawBtn").disabled = !(active && me === s.recipient.toLowerCase());
+  $("cancelBtn").disabled = !(active && (me === s.sender.toLowerCase() || me === s.recipient.toLowerCase()));
+  const h = [];
+  if (!account) h.push("Connect your wallet to act.");
+  else {
+    if (me === s.recipient.toLowerCase() && active) h.push("You are the recipient — withdraw what's streamed.");
+    if (me === s.sender.toLowerCase() && active) h.push("You are the sender — cancel to reclaim the unstreamed remainder.");
+    if (!active) h.push("This stream has ended.");
+  }
+  $("roleHint").textContent = h.join(" ");
+
+  liveStream = s; tickLive();
+  if (active) liveTimer = setInterval(tickLive, 1000);
+}
+
+$("loadBtn").onclick = async () => {
+  const id = $("mId").value; if (!id) return toast("Enter an ID", "bad");
+  try {
+    const s = await new ethers.Contract(spAddress(), SP_ABI, read).get(id);
+    if (s.sender === ethers.ZeroAddress) return toast("No such stream", "bad");
+    renderStream(id, s);
+  } catch (e) { toast("Load failed: " + (e.shortMessage || e.message), "bad"); }
+};
+
+async function act(fn, label) {
+  if (needWallet()) return;
+  const id = $("mId").value;
+  try {
+    await ensureChain();
+    toast(label + "…");
+    const tx = await fn(spWrite(), id); const rc = await tx.wait();
+    toast(label + " ✓", "good", rc.hash);
+    $("loadBtn").click(); loadInfo();
+  } catch (e) { toast("Failed: " + (e.shortMessage || e.message), "bad"); }
+}
+$("withdrawBtn").onclick = () => act((sp, id) => sp.withdraw(id, 0), "Withdrawing");
+$("cancelBtn").onclick = () => act((sp, id) => sp.cancel(id), "Cancelling");
+
+async function browse() {
+  const list = $("list");
+  list.innerHTML = "<div class='empty'>Loading…</div>";
+  try {
+    const sp = new ethers.Contract(spAddress(), SP_ABI, read);
+    const next = Number(await sp.nextId());
+    if (next <= 1) { list.innerHTML = "<div class='empty'>No streams yet — open the first one.</div>"; return; }
+    const ids = []; for (let i = 1; i < next; i++) ids.push(i);
+    const items = await Promise.all(ids.map((i) => sp.get(i)));
+    const t = nowSec();
+    list.innerHTML = "";
+    items.forEach((s, idx) => {
+      const id = ids[idx];
+      const active = Number(s.status) === 1;
+      const pending = active && t < Number(s.start);
+      const st = pending ? "Pending" : (STATUS[Number(s.status)] || "?");
+      const dep = BigInt(s.deposit), streamed = streamedAt(s, t);
+      const pct = dep > 0n ? Number((streamed * 10000n) / dep) / 100 : 0;
+      const el = document.createElement("div");
+      el.className = "card";
+      el.innerHTML = `
+        <div class="top"><span class="id">#${id}</span><span class="badge ${st}">${st}</span></div>
+        <div class="amt">${fmt(s.deposit)} USDC</div>
+        <div class="mini-bar"><div class="mini-fill" style="width:${Math.min(100,pct)}%"></div></div>
+        <div class="meta">to ${short(s.recipient)}<br>from ${short(s.sender)}<br>${pct.toFixed(1)}% streamed</div>`;
+      el.addEventListener("mousemove", (ev) => {
+        const r = el.getBoundingClientRect();
+        el.style.setProperty("--mx", (ev.clientX - r.left) + "px");
+        el.style.setProperty("--my", (ev.clientY - r.top) + "px");
+      });
+      el.onclick = () => {
+        document.querySelector('.tab[data-tab="manage"]').click();
+        $("mId").value = id; $("loadBtn").click(); window.scrollTo({ top: 0, behavior: "smooth" });
+      };
+      list.appendChild(el);
+    });
+  } catch (e) {
+    list.innerHTML = "";
+    const d = document.createElement("div"); d.className = "empty";
+    d.textContent = "Failed: " + (e.shortMessage || e.message);
+    list.appendChild(d);
+  }
+}
+
+$("connectBtn").onclick = connect;
+$("browseBtn").onclick = browse;
+if (window.ethereum) {
+  window.ethereum.on?.("accountsChanged", () => location.reload());
+  window.ethereum.on?.("chainChanged", () => location.reload());
+}
+// default window: now → +30 days
+(() => {
+  const s = new Date(); s.setMinutes(s.getMinutes() - s.getTimezoneOffset());
+  $("cStart").value = s.toISOString().slice(0, 16);
+  const e = new Date(Date.now() + 30 * 864e5); e.setMinutes(e.getMinutes() - e.getTimezoneOffset());
+  $("cStop").value = e.toISOString().slice(0, 16);
+  updateRate();
+})();
+loadInfo();
+</script>
+</body>
+</html>

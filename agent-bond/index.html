@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AgentBond — Arc Testnet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060912;
+    --bg-2: #0a0f1e;
+    --ink: #eef3fb;
+    --muted: #8c98af;
+    --faint: #525d72;
+    --line: rgba(255,255,255,0.065);
+    --line-2: rgba(122,170,255,0.20);
+    --glass: rgba(255,255,255,0.022);
+    --glass-2: rgba(255,255,255,0.05);
+    --c1: #4da2ff;
+    --c2: #56cfe1;
+    --c3: #2f6bff;
+    --good: #4fd6a8;
+    --bad: #ff7a7a;
+    --warn: #ffc266;
+    --r: 16px;
+    --ease: cubic-bezier(.22,.61,.36,1);
+    font-synthesis: none;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; color: var(--ink); background: var(--bg);
+    font-family: "Inter", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; line-height: 1.55; overflow-x: hidden;
+  }
+  ::selection { background: rgba(86,207,225,0.28); color: #fff; }
+  ::-webkit-scrollbar { width: 11px; height: 11px; }
+  ::-webkit-scrollbar-thumb { background: rgba(122,170,255,0.18); border-radius: 99px; border: 3px solid var(--bg); }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(122,170,255,0.32); }
+
+  .aurora { position: fixed; inset: 0; z-index: -3; overflow: hidden;
+    background:
+      radial-gradient(1000px 560px at 50% -10%, rgba(77,162,255,0.20), transparent 60%),
+      radial-gradient(760px 540px at 88% 112%, rgba(47,107,255,0.16), transparent 60%),
+      radial-gradient(620px 480px at 8% 40%, rgba(86,207,225,0.10), transparent 60%),
+      var(--bg); }
+  .aurora::before { content: ""; position: absolute; width: 620px; height: 620px;
+    left: 50%; top: -140px; transform: translateX(-50%); border-radius: 50%;
+    background: radial-gradient(circle, rgba(86,207,225,0.26), transparent 62%);
+    filter: blur(80px); animation: pulse 13s ease-in-out infinite; }
+  .aurora::after { content: ""; position: absolute; inset: -40%;
+    background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(77,162,255,0.05) 80deg, transparent 160deg, rgba(86,207,225,0.05) 250deg, transparent 360deg);
+    animation: spin 60s linear infinite; opacity: .6; }
+  @keyframes pulse { 0%,100%{ opacity:.5; transform:translateX(-50%) scale(1);} 50%{ opacity:.85; transform:translateX(-50%) scale(1.14);} }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .grain { position: fixed; inset: 0; z-index: -2; pointer-events: none; opacity: .45;
+    background-image:
+      linear-gradient(rgba(122,170,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(122,170,255,0.05) 1px, transparent 1px);
+    background-size: 56px 56px; background-position: center;
+    -webkit-mask-image: radial-gradient(circle at 50% 26%, #000 0%, transparent 76%);
+    mask-image: radial-gradient(circle at 50% 26%, #000 0%, transparent 76%); }
+  .noise { position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .035; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  header {
+    position: sticky; top: 0; z-index: 30;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 15px 30px; border-bottom: 1px solid var(--line);
+    background: rgba(5,7,15,0.5); backdrop-filter: blur(20px) saturate(150%);
+  }
+  .brand { display: flex; align-items: center; gap: 13px; }
+  .logo {
+    width: 40px; height: 40px; border-radius: 12px; position: relative;
+    background: linear-gradient(135deg, var(--c1), var(--c2)); display: grid; place-items: center;
+    box-shadow: 0 8px 26px rgba(91,140,255,0.5), inset 0 0 0 1px rgba(255,255,255,0.25);
+    animation: float 5s ease-in-out infinite;
+  }
+  .logo::after { content:""; position:absolute; inset:-2px; border-radius:14px; background: linear-gradient(135deg, var(--c2), var(--c1));
+    filter: blur(11px); opacity:.55; z-index:-1; animation: glow 4s ease-in-out infinite; }
+  @keyframes float { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-3px);} }
+  @keyframes glow { 0%,100%{ opacity:.4;} 50%{ opacity:.75;} }
+  .logo svg { width: 22px; height: 22px; }
+  .brand h1 { font-family: "Space Grotesk"; font-size: 17px; margin: 0; letter-spacing: -.2px; font-weight: 600; }
+  .brand small { color: var(--muted); font-size: 11.5px; }
+  .net-badge {
+    font-size: 11px; color: var(--c2); display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid var(--line-2); border-radius: 999px; padding: 6px 12px; background: var(--glass);
+  }
+  .net-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); box-shadow: 0 0 8px currentColor; }
+  .net-badge.ok { color: var(--good); } .net-badge.ok .dot { background: var(--good); animation: blink 2s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{ opacity:1;} 50%{ opacity:.45;} }
+
+  button {
+    font: inherit; font-weight: 600; cursor: pointer; border-radius: 12px;
+    border: 1px solid var(--line-2); background: var(--glass-2); color: var(--ink);
+    padding: 11px 17px; transition: .2s var(--ease); position: relative; overflow: hidden;
+  }
+  button:hover { border-color: rgba(91,140,255,0.6); transform: translateY(-1px); }
+  button::after { content:""; position:absolute; top:0; left:-120%; width:60%; height:100%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,0.22), transparent); transform: skewX(-18deg); transition: left .55s var(--ease); }
+  button:hover::after { left: 140%; }
+  button.primary {
+    border: none; color: #04111f;
+    background: linear-gradient(135deg, var(--c2), var(--c1));
+    box-shadow: 0 10px 28px rgba(54,160,255,0.35), inset 0 0 0 1px rgba(255,255,255,0.2);
+  }
+  button.primary:hover { filter: brightness(1.07); box-shadow: 0 14px 34px rgba(54,160,255,0.46); }
+  button.good { border: none; color: #042016; background: linear-gradient(135deg, #5be3b0, #2fbf8c); box-shadow: 0 8px 22px rgba(79,214,168,0.3); }
+  button.bad  { border: none; color: #2a0710; background: linear-gradient(135deg, #ff9a9a, #e0556b); box-shadow: 0 8px 22px rgba(224,85,107,0.3); }
+  button:disabled { opacity: .32; cursor: not-allowed; transform: none; box-shadow: none; }
+  button:disabled::after { display: none; }
+
+  main { max-width: 1020px; margin: 0 auto; padding: 46px 22px 90px; }
+
+  .rise { opacity: 0; transform: translateY(16px); animation: rise .7s var(--ease) forwards; }
+  .rise.d1 { animation-delay: .05s; } .rise.d2 { animation-delay: .13s; }
+  .rise.d3 { animation-delay: .21s; } .rise.d4 { animation-delay: .29s; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  .hero { text-align: center; margin: 10px 0 34px; }
+  .hero .eyebrow {
+    display: inline-block; font-size: 11.5px; letter-spacing: 2.6px; text-transform: uppercase;
+    color: var(--c2); border: 1px solid var(--line-2); border-radius: 999px; padding: 7px 15px;
+    background: var(--glass); margin-bottom: 20px; position: relative;
+  }
+  .hero h2 {
+    font-family: "Space Grotesk"; font-weight: 700; font-size: clamp(32px, 5.4vw, 56px);
+    line-height: 1.04; margin: 0 0 16px; letter-spacing: -1.6px;
+    background: linear-gradient(110deg, #ffffff 12%, var(--c2) 42%, var(--c1) 64%, #ffffff 92%);
+    background-size: 220% auto;
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    animation: shimmer 7s linear infinite;
+  }
+  @keyframes shimmer { to { background-position: 220% center; } }
+  .hero p { color: var(--muted); max-width: 610px; margin: 0 auto; font-size: 15.5px; }
+
+  .stat-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin: 6px 0; }
+  .stat { background: linear-gradient(180deg, var(--glass-2), var(--glass)); border: 1px solid var(--line);
+    border-radius: var(--r); padding: 20px 16px; text-align: center; position: relative; overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+  .stat::before { content:""; position:absolute; inset:0 0 auto 0; height:1px; background: linear-gradient(90deg, transparent, var(--line-2), transparent); }
+  .stat b { font-family: "Space Grotesk"; font-size: 26px; display: block; letter-spacing: -.5px;
+    background: linear-gradient(120deg, #fff, var(--c2)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .stat small { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .7px; }
+
+  .settings-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    font-size: 12px; color: var(--muted); justify-content: center; margin: 22px 0 4px; }
+  .settings-bar .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 13px;
+    border: 1px solid var(--line); border-radius: 999px; background: var(--glass); transition: .18s; }
+  .settings-bar .chip:hover { border-color: var(--line-2); }
+  .settings-bar code { color: var(--c2); font-family: ui-monospace, monospace; }
+  .settings-bar button { padding: 6px 13px; font-size: 12px; }
+
+  .tabs-wrap { display: flex; justify-content: center; }
+  .tabs { display: inline-flex; gap: 4px; padding: 6px; border-radius: 999px;
+    border: 1px solid var(--line); background: rgba(255,255,255,0.03); margin: 28px auto; flex-wrap: wrap; justify-content: center;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04); }
+  .tab { padding: 10px 19px; border-radius: 999px; background: transparent; border: none;
+    color: var(--muted); font-weight: 600; font-size: 14px; transition: .2s var(--ease); }
+  .tab::after { display: none; }
+  .tab:hover { transform: none; color: var(--ink); }
+  .tab.active { color: #04111f; background: linear-gradient(135deg, var(--c2), var(--c1));
+    box-shadow: 0 8px 22px rgba(54,160,255,0.34); }
+
+  .panel {
+    background: linear-gradient(180deg, var(--glass-2), var(--glass)); border: 1px solid var(--line);
+    border-radius: var(--r); padding: 26px; margin-bottom: 18px;
+    backdrop-filter: blur(10px); position: relative; overflow: hidden;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.32);
+  }
+  .panel::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--line-2), transparent); }
+  .panel h3 { font-family: "Space Grotesk"; margin: 0 0 6px; font-size: 20px; font-weight: 600; letter-spacing: -.3px; }
+  .panel .hint { color: var(--muted); margin: 0 0 18px; font-size: 13.5px; }
+  .panel .hint code { color: var(--c2); background: var(--glass-2); padding: 2px 7px; border-radius: 7px; font-size: 12px; }
+
+  label { display: block; font-size: 12px; color: var(--muted); margin: 15px 0 7px; font-weight: 600; letter-spacing: .2px; }
+  input {
+    width: 100%; font: inherit; color: var(--ink);
+    background: rgba(0,0,0,0.28); border: 1px solid var(--line-2);
+    border-radius: 12px; padding: 13px 15px; outline: none; transition: .18s var(--ease);
+  }
+  input::placeholder { color: var(--faint); }
+  input:focus { border-color: var(--c1); box-shadow: 0 0 0 4px rgba(91,140,255,0.16); background: rgba(0,0,0,0.4); }
+  .row { display: flex; gap: 15px; flex-wrap: wrap; }
+  .row > div { flex: 1; min-width: 200px; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; align-items: center; }
+  .mini { font-size: 12px; padding: 8px 13px; }
+
+  .kv { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .kv:last-of-type { border-bottom: none; }
+  .kv span:first-child { color: var(--muted); }
+  .kv span:last-child { font-family: ui-monospace, monospace; word-break: break-all; text-align: right; }
+  .addr { color: var(--c1); }
+
+  /* bond meter: free (green) vs locked (amber) */
+  .meter { margin: 6px 0 4px; }
+  .meter-bar { height: 16px; border-radius: 999px; background: rgba(0,0,0,0.35);
+    border: 1px solid var(--line-2); overflow: hidden; display: flex; }
+  .meter-free { height: 100%; background: linear-gradient(90deg, #2fbf8c, #5be3b0); }
+  .meter-locked { height: 100%; background: linear-gradient(90deg, #d99a3a, #ffc266); }
+  .meter-legend { display: flex; gap: 18px; font-size: 12px; color: var(--muted); margin-top: 10px; justify-content: center; flex-wrap: wrap; }
+  .meter-legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .meter-legend .sw { width: 11px; height: 11px; border-radius: 3px; }
+  .meter-legend b { font-family: "Space Grotesk"; color: var(--ink); }
+  .big-bond { font-family: "Space Grotesk"; font-size: 34px; text-align: center; letter-spacing: -.6px; margin: 2px 0 6px;
+    background: linear-gradient(120deg, #fff, var(--c2)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .big-cap { text-align: center; font-size: 11px; color: var(--faint); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 14px; }
+
+  .badge { font-size: 11px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line-2); color: var(--muted); font-weight: 600; letter-spacing: .3px; }
+  .badge.Active { color: var(--warn); border-color: rgba(255,194,102,0.5); box-shadow: 0 0 14px rgba(255,194,102,0.12); }
+  .badge.Released { color: var(--good); border-color: rgba(79,214,168,0.55); box-shadow: 0 0 14px rgba(79,214,168,0.14); }
+  .badge.Slashed { color: var(--bad); border-color: rgba(255,122,122,0.55); box-shadow: 0 0 14px rgba(255,122,122,0.12); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 16px; margin-top: 20px; }
+  .card {
+    background: linear-gradient(180deg, var(--glass-2), var(--glass)); border: 1px solid var(--line); border-radius: var(--r);
+    padding: 20px; cursor: pointer; transition: .25s var(--ease); position: relative; overflow: hidden;
+  }
+  .card::before { content:""; position:absolute; inset:0; opacity:0; transition: opacity .25s;
+    background: radial-gradient(420px circle at var(--mx,50%) var(--my,0%), rgba(86,207,225,0.14), transparent 42%); }
+  .card:hover::before { opacity: 1; }
+  .card::after { content: ""; position: absolute; inset: 0; border-radius: var(--r); padding: 1px;
+    background: linear-gradient(135deg, transparent, var(--c1), var(--c2)); opacity: 0;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude; transition: .25s; }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 22px 48px rgba(0,0,0,0.4); }
+  .card:hover::after { opacity: .85; }
+  .card .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; position: relative; }
+  .card .id { font-family: "Space Grotesk"; font-size: 13px; color: var(--c2); font-weight: 600; }
+  .card .amt { font-family: "Space Grotesk"; font-size: 22px; margin: 2px 0 10px; position: relative; letter-spacing: -.4px; }
+  .card .meta { font-size: 11.5px; color: var(--faint); font-family: ui-monospace, monospace; line-height: 1.9; position: relative; }
+  .empty { text-align: center; color: var(--muted); padding: 44px 0; font-size: 14px; }
+  .dir-head { display: flex; justify-content: space-between; align-items: center; }
+  .count-pill { font-size: 12px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line-2);
+    color: var(--c2); background: var(--glass); font-weight: 600; }
+  .roleHint { font-size: 12.5px; color: var(--c2); margin-top: 16px; min-height: 16px; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(22px);
+    background: rgba(10,16,30,0.92); border: 1px solid var(--line-2); padding: 14px 21px; border-radius: 14px;
+    font-size: 13px; z-index: 50; max-width: 90vw; box-shadow: 0 18px 46px rgba(0,0,0,0.6); backdrop-filter: blur(12px);
+    opacity: 0; pointer-events: none; transition: .3s var(--ease); }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.good { border-color: rgba(54,224,160,0.6); } .toast.bad { border-color: rgba(255,122,122,0.6); }
+  .toast a { color: var(--c2); }
+
+  footer { text-align: center; color: var(--faint); font-size: 12px; padding: 26px; }
+  footer a { color: var(--muted); text-decoration: none; }
+  footer a:hover { color: var(--c2); }
+  .about p { color: var(--muted); font-size: 14px; }
+  .about .step { display: flex; gap: 15px; margin: 18px 0; }
+  .about .num { flex: 0 0 32px; height: 32px; border-radius: 10px; display: grid; place-items: center;
+    font-family: "Space Grotesk"; font-weight: 700; color: #04111f; background: linear-gradient(135deg, var(--c2), var(--c1));
+    box-shadow: 0 6px 16px rgba(54,160,255,0.32); }
+  .about .step b { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="aurora"></div>
+<div class="grain"></div>
+<div class="noise"></div>
+
+<header>
+  <div class="brand">
+    <div class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6l8-4z" stroke="#04111f" stroke-width="2" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="#04111f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div>
+      <h1>AgentBond</h1>
+      <small>reputation-backed agent credit on Arc</small>
+    </div>
+  </div>
+  <div style="display:flex; align-items:center; gap:12px;">
+    <span id="netBadge" class="net-badge"><span class="dot"></span>not connected</span>
+    <button id="connectBtn" class="primary">Connect Wallet</button>
+  </div>
+</header>
+
+<main>
+  <div class="hero rise">
+    <div class="eyebrow">Arc Testnet · USDC-native · Agentic</div>
+    <h2>Skin in the game<br>for autonomous agents</h2>
+    <p>An AI agent posts a USDC bond — collateral backing its on-chain reputation — then grants specific protocols the right to slash it. A credit line, a marketplace, an insurer can lock against the bond, release it when the agent performs, or slash it on default. The free bond is the number anyone reads to decide how far to trust the agent.</p>
+  </div>
+
+  <div class="stat-row rise d1">
+    <div class="stat"><b id="sTvl">—</b><small>USDC bonded (TVL)</small></div>
+    <div class="stat"><b id="sObl">—</b><small>Obligations opened</small></div>
+    <div class="stat"><b id="sMine">—</b><small>Your USDC</small></div>
+  </div>
+
+  <div class="settings-bar rise d2">
+    <span class="chip">Contract <code id="abChip">—</code></span>
+    <span class="chip">USDC <code id="usdcChip">—</code></span>
+    <button id="editAddrBtn" class="mini">Change</button>
+    <a id="explorer" class="chip" target="_blank" rel="noopener" style="text-decoration:none;color:var(--c2)">arcscan ↗</a>
+  </div>
+
+  <div class="tabs-wrap rise d3">
+    <div class="tabs">
+      <button class="tab active" data-tab="bond">My bond</button>
+      <button class="tab" data-tab="enforce">Enforcer</button>
+      <button class="tab" data-tab="browse">Obligations</button>
+      <button class="tab" data-tab="about">How it works</button>
+    </div>
+  </div>
+
+  <div class="rise d4">
+  <!-- BOND (agent side) -->
+  <section id="tab-bond">
+    <div class="panel">
+      <h3>Your bond</h3>
+      <p class="hint">Deposit USDC to back your reputation. <b>Free</b> bond is withdrawable and is what counterparties trust; <b>locked</b> bond is held behind an open obligation.</p>
+      <div class="big-bond" id="bondTotal">—</div>
+      <div class="big-cap">total bond</div>
+      <div class="meter">
+        <div class="meter-bar"><div class="meter-free" id="mFree" style="width:0%"></div><div class="meter-locked" id="mLocked" style="width:0%"></div></div>
+        <div class="meter-legend">
+          <span><span class="sw" style="background:#5be3b0"></span>free <b id="lFree">—</b></span>
+          <span><span class="sw" style="background:#ffc266"></span>locked <b id="lLocked">—</b></span>
+        </div>
+      </div>
+      <div class="row" style="margin-top:18px;">
+        <div><label>Amount (USDC)</label><input id="bAmount" type="number" min="0" step="0.000001" placeholder="50" /></div>
+      </div>
+      <div class="actions">
+        <button id="depositBtn" class="primary">Approve &amp; Deposit</button>
+        <button id="withdrawBtn" class="good">Withdraw free</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Grant slashing allowance</h3>
+      <p class="hint">Authorize a protocol contract (an <code>enforcer</code>) to lock and slash up to a set amount of your bond — like ERC-20 <code>approve</code>. Set <code>0</code> to revoke. Only ever trust audited enforcer code.</p>
+      <div class="row">
+        <div><label>Enforcer contract</label><input id="gEnforcer" spellcheck="false" placeholder="0x… the protocol you trust" /></div>
+        <div><label>Allowance (USDC)</label><input id="gAmount" type="number" min="0" step="0.000001" placeholder="50" /></div>
+      </div>
+      <div class="actions">
+        <button id="checkAllowBtn" class="mini">Check current</button>
+        <button id="grantBtn" class="primary" style="margin-left:auto;">Set allowance</button>
+      </div>
+      <div class="roleHint" id="allowHint"></div>
+    </div>
+  </section>
+
+  <!-- ENFORCE (protocol side) -->
+  <section id="tab-enforce" style="display:none;">
+    <div class="panel">
+      <h3>Open an obligation</h3>
+      <p class="hint">As an <code>enforcer</code>, lock a slice of an agent's bond behind an obligation. Spends the allowance that agent granted you. Demo tip: grant your own address an allowance in <b>My bond</b>, then act as the enforcer here.</p>
+      <div class="row">
+        <div><label>Agent address</label><input id="eAgent" spellcheck="false" placeholder="0x… whose bond is on the hook" /></div>
+      </div>
+      <div class="row">
+        <div><label>Creditor (paid on slash)</label><input id="eCreditor" spellcheck="false" placeholder="0x… who gets the funds if slashed" /></div>
+        <div><label>Amount (USDC)</label><input id="eAmount" type="number" min="0" step="0.000001" placeholder="20" /></div>
+      </div>
+      <div class="actions">
+        <button id="useMeCreditor" class="mini">Me as creditor</button>
+        <button id="lockBtn" class="primary" style="margin-left:auto;">Lock bond</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Resolve an obligation</h3>
+      <p class="hint">Load by ID. <b>Release</b> when the agent performed (bond unlocks, capacity returns). <b>Slash</b> on default (bond pays the creditor, capacity is burned). Only the enforcer that opened it can resolve.</p>
+      <div class="row">
+        <div><label>Obligation ID</label><input id="oId" type="number" min="1" placeholder="1" /></div>
+        <div style="display:flex; align-items:flex-end;"><button id="loadBtn" style="width:100%;">Load</button></div>
+      </div>
+      <div id="oDetail" style="display:none; margin-top:18px;">
+        <div class="kv"><span>Status</span><span id="dStatus"></span></div>
+        <div class="kv"><span>Amount</span><span id="dAmount"></span></div>
+        <div class="kv"><span>Agent</span><span id="dAgent" class="addr"></span></div>
+        <div class="kv"><span>Enforcer</span><span id="dEnforcer" class="addr"></span></div>
+        <div class="kv"><span>Creditor</span><span id="dCreditor" class="addr"></span></div>
+        <div class="actions">
+          <button id="releaseBtn" class="good">Release (performed)</button>
+          <button id="slashBtn" class="bad">Slash (defaulted)</button>
+        </div>
+        <div class="roleHint" id="roleHint"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BROWSE -->
+  <section id="tab-browse" style="display:none;">
+    <div class="panel">
+      <div class="dir-head">
+        <h3 style="margin:0;">All obligations <span class="count-pill" id="countPill">0</span></h3>
+        <button id="browseBtn" class="mini">↻ Refresh</button>
+      </div>
+      <p class="hint" style="margin-top:10px;">Read straight from the public Arc RPC — no wallet needed.</p>
+      <div id="list" class="grid"></div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="tab-about" style="display:none;">
+    <div class="panel about">
+      <h3>How AgentBond works</h3>
+      <div class="step"><div class="num">1</div><div><b>Bond.</b> An agent deposits USDC. The free balance is its public credit score — the bigger the bond, the more counterparties will trust it.</div></div>
+      <div class="step"><div class="num">2</div><div><b>Grant.</b> The agent approves specific protocols to lock and slash its bond, exactly like an ERC-20 allowance. Nothing can touch the bond without an explicit grant.</div></div>
+      <div class="step"><div class="num">3</div><div><b>Lock → release or slash.</b> A protocol locks a slice behind an obligation. Performed → release (capacity revolves back). Defaulted → slash (the bond pays the creditor, that capacity is burned forever).</div></div>
+      <p style="margin-top:18px;">No owner, no admin, no upgrade key — the contract only ever custodies bonds, tracked by real balance delta so it stays solvent against any token. The shared enforcement layer beneath uncollateralized agent credit, agent marketplaces, and on-chain insurance on Arc.</p>
+    </div>
+  </section>
+  </div>
+
+  <footer>
+    AgentBond · Arc Testnet (chain 5042002) · <a id="footExplorer" target="_blank" rel="noopener">view contract on arcscan</a>
+  </footer>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script type="module">
+import { ethers } from "https://esm.sh/ethers@6.13.4";
+
+const RPC = "https://rpc.testnet.arc.network";
+const CHAIN_ID = 5042002;
+const CHAIN_HEX = "0x" + CHAIN_ID.toString(16);
+const EXPLORER = "https://testnet.arcscan.app";
+const DEFAULT_AB = "0xb70f607de14afd682cc834352460a664e25e1dcb";
+
+const AB_ABI = [
+  "function nextObligationId() view returns (uint256)",
+  "function usdc() view returns (address)",
+  "function bond(address) view returns (uint256)",
+  "function locked(address) view returns (uint256)",
+  "function freeBondOf(address agent) view returns (uint256)",
+  "function slashAllowance(address agent,address enforcer) view returns (uint256)",
+  "function getObligation(uint256 id) view returns (tuple(address agent,address enforcer,address creditor,uint256 amount,uint8 status))",
+  "function deposit(uint256 amount)",
+  "function withdraw(uint256 amount)",
+  "function setSlashAllowance(address enforcer,uint256 amount)",
+  "function lock(address agent,address creditor,uint256 amount) returns (uint256)",
+  "function release(uint256 id)",
+  "function slash(uint256 id)"
+];
+const ERC20_ABI = [
+  "function approve(address spender,uint256 amount) returns (bool)",
+  "function allowance(address owner,address spender) view returns (uint256)",
+  "function balanceOf(address) view returns (uint256)",
+  "function decimals() view returns (uint8)"
+];
+const STATUS = ["None", "Active", "Released", "Slashed"];
+
+const read = new ethers.JsonRpcProvider(RPC, CHAIN_ID);
+let provider, signer, account, usdcAddr, usdcDecimals = 6;
+
+const $ = (id) => document.getElementById(id);
+const abAddress = () => (localStorage.getItem("ab_addr") || DEFAULT_AB);
+const short = (a) => a ? a.slice(0, 6) + "…" + a.slice(-4) : "—";
+const fmt = (v) => ethers.formatUnits(v, usdcDecimals);
+
+function countTo(el, target, decimals) {
+  const start = parseFloat(el.dataset.v || "0") || 0;
+  const end = Number(target);
+  el.dataset.v = end;
+  const t0 = performance.now(), dur = 700;
+  function step(t) {
+    const k = Math.min(1, (t - t0) / dur);
+    const e = 1 - Math.pow(1 - k, 3);
+    const val = start + (end - start) * e;
+    el.textContent = decimals ? val.toFixed(decimals) : Math.round(val).toString();
+    if (k < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function toast(msg, kind, txHash) {
+  const t = $("toast");
+  t.className = "toast show" + (kind ? " " + kind : "");
+  t.textContent = msg;
+  if (txHash) {
+    t.append(" · ");
+    const a = document.createElement("a");
+    a.href = `${EXPLORER}/tx/${encodeURIComponent(txHash)}`;
+    a.target = "_blank"; a.rel = "noopener"; a.textContent = "tx ↗";
+    t.append(a);
+  }
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => (t.className = "toast"), 9000);
+}
+
+document.querySelectorAll(".tab").forEach((b) => b.onclick = () => {
+  document.querySelectorAll(".tab").forEach((x) => x.classList.remove("active"));
+  b.classList.add("active");
+  ["bond", "enforce", "browse", "about"].forEach((n) => $("tab-" + n).style.display = "none");
+  $("tab-" + b.dataset.tab).style.display = "block";
+  if (b.dataset.tab === "browse") browse();
+});
+
+function syncChips() {
+  $("abChip").textContent = short(abAddress());
+  $("usdcChip").textContent = usdcAddr ? short(usdcAddr) : "—";
+  $("explorer").href = `${EXPLORER}/address/${abAddress()}`;
+  $("footExplorer").href = `${EXPLORER}/address/${abAddress()}`;
+}
+
+function ab(p) { return new ethers.Contract(abAddress(), AB_ABI, p || read); }
+
+async function loadInfo() {
+  syncChips();
+  if (!ethers.isAddress(abAddress())) return toast("Invalid contract address", "bad");
+  try {
+    const c = ab();
+    const [next, u] = await Promise.all([c.nextObligationId(), c.usdc()]);
+    usdcAddr = u; syncChips();
+    const oblTotal = Number(next) - 1;
+    countTo($("sObl"), oblTotal, 0);
+    $("countPill").textContent = oblTotal;
+    const erc = new ethers.Contract(u, ERC20_ABI, read);
+    try { usdcDecimals = Number(await erc.decimals()); } catch { usdcDecimals = 6; }
+    countTo($("sTvl"), fmt(await erc.balanceOf(abAddress())), 2);
+    if (account) { countTo($("sMine"), fmt(await erc.balanceOf(account)), 2); await loadBond(); }
+  } catch (e) { toast("Read failed: " + (e.shortMessage || e.message), "bad"); }
+}
+
+async function loadBond() {
+  if (!account) return;
+  try {
+    const c = ab();
+    const [total, locked] = await Promise.all([c.bond(account), c.locked(account)]);
+    const free = total - locked;
+    $("bondTotal").textContent = fmt(total) + " USDC";
+    $("lFree").textContent = fmt(free);
+    $("lLocked").textContent = fmt(locked);
+    const t = Number(total);
+    const fp = t > 0 ? (Number(free) / t) * 100 : 0;
+    const lp = t > 0 ? (Number(locked) / t) * 100 : 0;
+    $("mFree").style.width = fp + "%";
+    $("mLocked").style.width = lp + "%";
+  } catch (e) { /* silent */ }
+}
+
+async function connect() {
+  if (!window.ethereum) return toast("No wallet found. Install MetaMask.", "bad");
+  provider = new ethers.BrowserProvider(window.ethereum);
+  await provider.send("eth_requestAccounts", []);
+  try {
+    await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: CHAIN_HEX }] });
+  } catch (e) {
+    if (e.code === 4902) {
+      await window.ethereum.request({ method: "wallet_addEthereumChain", params: [{
+        chainId: CHAIN_HEX, chainName: "Arc Testnet",
+        nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 },
+        rpcUrls: [RPC], blockExplorerUrls: [EXPLORER] }] });
+    } else throw e;
+  }
+  signer = await provider.getSigner();
+  account = await signer.getAddress();
+  $("connectBtn").textContent = short(account);
+  $("netBadge").className = "net-badge ok";
+  $("netBadge").innerHTML = '<span class="dot"></span>Arc Testnet';
+  loadInfo();
+}
+function needWallet() { if (!signer) { connect(); return true; } return false; }
+
+async function ensureChain() {
+  const net = await provider.getNetwork();
+  if (Number(net.chainId) === CHAIN_ID) return;
+  await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: CHAIN_HEX }] });
+  signer = await provider.getSigner();
+  account = await signer.getAddress();
+  const after = await provider.getNetwork();
+  if (Number(after.chainId) !== CHAIN_ID) throw new Error("Wrong network — switch to Arc Testnet (chain " + CHAIN_ID + ")");
+}
+
+$("editAddrBtn").onclick = () => {
+  const v = prompt("AgentBond contract address:", abAddress());
+  if (v && ethers.isAddress(v.trim())) { localStorage.setItem("ab_addr", v.trim()); loadInfo(); }
+  else if (v) toast("Invalid address", "bad");
+};
+$("useMeCreditor").onclick = () => account ? ($("eCreditor").value = account) : connect();
+
+async function approveIfNeeded(amount) {
+  const erc = new ethers.Contract(usdcAddr, ERC20_ABI, signer);
+  if ((await erc.allowance(account, abAddress())) < amount) {
+    toast("Approving USDC…");
+    const ax = await erc.approve(abAddress(), amount); await ax.wait();
+    toast("Approved", "good", ax.hash);
+  }
+}
+
+$("depositBtn").onclick = async () => {
+  if (needWallet()) return;
+  const v = $("bAmount").value.trim();
+  if (!v || Number(v) <= 0) return toast("Enter an amount > 0", "bad");
+  const amount = ethers.parseUnits(v, usdcDecimals);
+  try {
+    await ensureChain();
+    await approveIfNeeded(amount);
+    toast("Depositing bond…");
+    const tx = await ab(signer).deposit(amount); const rc = await tx.wait();
+    toast("Bond deposited", "good", rc.hash);
+    loadInfo();
+  } catch (e) { toast("Failed: " + (e.shortMessage || e.message), "bad"); }
+};
+
+$("withdrawBtn").onclick = async () => {
+  if (needWallet()) return;
+  const v = $("bAmount").value.trim();
+  if (!v || Number(v) <= 0) return toast("Enter an amount > 0", "bad");
+  const amount = ethers.parseUnits(v, usdcDecimals);
+  try {
+    await ensureChain();
+    toast("Withdrawing…");
+    const tx = await ab(signer).withdraw(amount); const rc = await tx.wait();
+    toast("Withdrawn", "good", rc.hash);
+    loadInfo();
+  } catch (e) { toast("Failed: " + (e.shortMessage || e.message), "bad"); }
+};
+
+$("grantBtn").onclick = async () => {
+  if (needWallet()) return;
+  const enforcer = $("gEnforcer").value.trim(), v = $("gAmount").value.trim();
+  if (!ethers.isAddress(enforcer)) return toast("Invalid enforcer address", "bad");
+  if (v === "" || Number(v) < 0) return toast("Enter an allowance (0 to revoke)", "bad");
+  const amount = ethers.parseUnits(v, usdcDecimals);
+  try {
+    await ensureChain();
+    toast("Setting allowance…");
+    const tx = await ab(signer).setSlashAllowance(enforcer, amount); const rc = await tx.wait();
+    toast("Allowance set", "good", rc.hash);
+  } catch (e) { toast("Failed: " + (e.shortMessage || e.message), "bad"); }
+};
+
+$("checkAllowBtn").onclick = async () => {
+  if (needWallet()) return;
+  const enforcer = $("gEnforcer").value.trim();
+  if (!ethers.isAddress(enforcer)) return toast("Invalid enforcer address", "bad");
+  try {
+    const a = await ab().slashAllowance(account, enforcer);
+    $("allowHint").textContent = "Current allowance to " + short(enforcer) + ": " + fmt(a) + " USDC";
+  } catch (e) { toast("Failed: " + (e.shortMessage || e.message), "bad"); }
+};
+
+$("lockBtn").onclick = async () => {
+  if (needWallet()) return;
+  const agent = $("eAgent").value.trim(), creditor = $("eCreditor").value.trim(), v = $("eAmount").value.trim();
+  if (!ethers.isAddress(agent)) return toast("Invalid agent address", "bad");
+  if (!ethers.isAddress(creditor)) return toast("Invalid creditor address", "bad");
+  if (!v || Number(v) <= 0) return toast("Enter an amount > 0", "bad");
+  const amount = ethers.parseUnits(v, usdcDecimals);
+  try {
+    await ensureChain();
+    toast("Locking bond…");
+    const tx = await ab(signer).lock(agent, creditor, amount); const rc = await tx.wait();
+    toast("Obligation opened", "good", rc.hash);
+    loadInfo();
+  } catch (e) { toast("Failed: " + (e.shortMessage || e.message), "bad"); }
+};
+
+function renderObligation(id, o) {
+  const st = STATUS[Number(o.status)] || "?";
+  $("dStatus").innerHTML = `<span class="badge ${st}">${st}</span>`;
+  $("dAmount").textContent = fmt(o.amount) + " USDC";
+  $("dAgent").textContent = o.agent;
+  $("dEnforcer").textContent = o.enforcer;
+  $("dCreditor").textContent = o.creditor;
+  $("oDetail").style.display = "block";
+  const me = account?.toLowerCase();
+  const active = Number(o.status) === 1;
+  const isEnforcer = me === o.enforcer.toLowerCase();
+  $("releaseBtn").disabled = !(active && isEnforcer);
+  $("slashBtn").disabled = !(active && isEnforcer);
+  const h = [];
+  if (!account) h.push("Connect your wallet to act.");
+  else if (!active) h.push("This obligation is already resolved (" + st + ").");
+  else if (isEnforcer) h.push("You are the enforcer — release if performed, slash on default.");
+  else h.push("Only the enforcer that opened this can resolve it.");
+  $("roleHint").textContent = h.join(" ");
+}
+
+$("loadBtn").onclick = async () => {
+  const id = $("oId").value; if (!id) return toast("Enter an ID", "bad");
+  try {
+    const o = await ab().getObligation(id);
+    if (o.agent === ethers.ZeroAddress) return toast("No such obligation", "bad");
+    renderObligation(id, o);
+  } catch (e) { toast("Load failed: " + (e.shortMessage || e.message), "bad"); }
+};
+
+async function act(fn, label) {
+  if (needWallet()) return;
+  const id = $("oId").value;
+  try {
+    await ensureChain();
+    toast(label + "…");
+    const tx = await fn(ab(signer), id); const rc = await tx.wait();
+    toast(label + " ✓", "good", rc.hash);
+    $("loadBtn").click(); loadInfo();
+  } catch (e) { toast("Failed: " + (e.shortMessage || e.message), "bad"); }
+}
+$("releaseBtn").onclick = () => act((c, id) => c.release(id), "Releasing");
+$("slashBtn").onclick = () => act((c, id) => c.slash(id), "Slashing");
+
+async function browse() {
+  const list = $("list");
+  list.innerHTML = "<div class='empty'>Loading…</div>";
+  try {
+    const c = ab();
+    const next = Number(await c.nextObligationId());
+    if (next <= 1) { list.innerHTML = "<div class='empty'>No obligations yet.</div>"; return; }
+    const ids = []; for (let i = 1; i < next; i++) ids.push(i);
+    const items = await Promise.all(ids.map((i) => c.getObligation(i)));
+    list.innerHTML = "";
+    items.forEach((o, idx) => {
+      const id = ids[idx], st = STATUS[Number(o.status)] || "?";
+      const el = document.createElement("div");
+      el.className = "card";
+      el.innerHTML = `
+        <div class="top"><span class="id">#${id}</span><span class="badge ${st}">${st}</span></div>
+        <div class="amt">${fmt(o.amount)} USDC</div>
+        <div class="meta">agent ${short(o.agent)}<br>enforcer ${short(o.enforcer)}<br>creditor ${short(o.creditor)}</div>`;
+      el.addEventListener("mousemove", (ev) => {
+        const r = el.getBoundingClientRect();
+        el.style.setProperty("--mx", (ev.clientX - r.left) + "px");
+        el.style.setProperty("--my", (ev.clientY - r.top) + "px");
+      });
+      el.onclick = () => {
+        document.querySelector('.tab[data-tab="enforce"]').click();
+        $("oId").value = id; $("loadBtn").click(); window.scrollTo({ top: 0, behavior: "smooth" });
+      };
+      list.appendChild(el);
+    });
+  } catch (e) {
+    list.innerHTML = "";
+    const d = document.createElement("div"); d.className = "empty";
+    d.textContent = "Failed: " + (e.shortMessage || e.message);
+    list.appendChild(d);
+  }
+}
+
+$("connectBtn").onclick = connect;
+$("browseBtn").onclick = browse;
+if (window.ethereum) {
+  window.ethereum.on?.("accountsChanged", () => location.reload());
+  window.ethereum.on?.("chainChanged", () => location.reload());
+}
+loadInfo();
+</script>
+</body>
+</html>
