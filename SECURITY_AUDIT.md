@@ -15,7 +15,7 @@ Adversarial self-audit of the two contracts (`AgentBond`, `StreamPay`) using Fou
 ## Test results
 
 ```
-AgentBond:  18 passed / 0 failed   (incl. solvency invariant: 256 runs · 128,000 calls · 0 reverts)
+AgentBond:  22 passed / 0 failed   (incl. solvency invariant: 256 runs · 128,000 calls · 0 reverts)
 StreamPay:  18 passed / 0 failed   (incl. fee-on-transfer, reentrancy, solvent-split fuzz, terminal-view regression)
 ```
 
