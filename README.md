@@ -1,5 +1,7 @@
 # Arc Agentic Stack
 
+[![tests](https://github.com/Mnorbert87/arc-agentic-stack/actions/workflows/test.yml/badge.svg)](https://github.com/Mnorbert87/arc-agentic-stack/actions/workflows/test.yml)
+
 **Trust + settlement primitives for autonomous agents — settled in USDC on Arc.**
 
 Submitted to the Circle *Stablecoin Commerce Stack Challenge* — **Track 4: Best Agentic Economy Experience on Arc.**
@@ -92,6 +94,27 @@ Yes — by design, because on-chain you can only verify *outcomes*, not *intent*
 
 ---
 
+## Verification — tests, fuzz, invariants, threat model
+
+Every contract in the stack ships with a unit + adversarial + fuzz + **invariant** suite, run on every push by [CI](.github/workflows/test.yml). The invariants are checked against *ghost ledgers built from real ERC-20 balance movements* — the tests never trust the contract's own bookkeeping. Actual numbers from the current suite (forge 1.7.1, same config enforced in CI):
+
+| Project | Tests | Fuzz properties | Invariants | Invariant campaign | Result |
+|---|---|---|---|---|---|
+| [`contracts/agent-bond`](contracts/agent-bond/README.md) | 29 | 5 × 10,000 runs | 4 | each 10,000 runs × depth 15 = 150,000 calls | ✅ 0 failed, 0 violations |
+| [`contracts/stream-pay`](contracts/stream-pay/README.md) | 25 | 5 × 10,000 runs | 3 | each 10,000 runs × depth 15 = 150,000 calls | ✅ 0 failed, 0 violations |
+| [`contracts/commit-stake`](contracts/commit-stake/README.md) | 25 | 6 × 10,000 runs | 3 | each 10,000 runs × depth 15 = 150,000 calls | ✅ 0 failed, 0 violations |
+
+Headline invariants (full statements in the per-project READMEs):
+
+- **Solvency** (all three): the contract's real USDC balance always equals observed inflows minus observed outflows — it can never pay out more than was paid in.
+- **Bond equation** (AgentBond): `free + locked == deposits − slashed − withdrawn` against an independently observed ghost ledger.
+- **Vesting bound** (StreamPay): a recipient's cumulative payout never exceeds the linear vesting cap recomputed from the stream's parameters in the test itself.
+- **Exactly-one payout** (CommitStake): every stake reaches the staker XOR the beneficiary — double payout is impossible.
+
+Adversarial analysis — who can attack (malicious verifier, silent verifier, griefing, front-running, reentrancy, insolvency, privileged rug) and the exact mechanism that stops each — is in [**THREAT_MODEL.md**](THREAT_MODEL.md).
+
+---
+
 ## How Circle products are used on Arc
 
 | Product | Role | Status |
@@ -123,7 +146,7 @@ Circle's `estimateContractExecutionFee` and `createContractExecutionTransaction`
 ### Contracts (Foundry)
 
 ```bash
-# from each contract dir: contracts/agent-bond, contracts/stream-pay
+# from each contract dir: contracts/agent-bond, contracts/stream-pay, contracts/commit-stake
 forge install foundry-rs/forge-std   # test/script dependency (gitignored)
 forge build
 forge test                            # full unit + adversarial suites
