@@ -36,8 +36,11 @@ abstract contract ReentrancyGuard {
 ///         creditor (the agent defaulted — the bond pays, capacity is burned). The free (unlocked)
 ///         bond is the number other parties read to decide how much to trust the agent.
 ///
-///         No owner, no admin, no upgrade key. The contract custodies only the bonds, tracked by
-///         actual balance delta so it stays solvent against any non-standard ERC-20.
+///         No owner, no admin, no upgrade key. The contract custodies only the bonds, using
+///         balance-delta accounting: it books the amount that actually arrived (balanceOf delta),
+///         not the requested amount. Unit-tested with fee-on-transfer and no-return (USDT-style)
+///         tokens; the production token is Arc USDC, a standard 1:1 ERC-20. Other exotic ERC-20
+///         behaviours are out of scope.
 ///
 ///         USDC has 6 decimals; all amounts are micro-USDC.
 contract AgentBond is ReentrancyGuard {
@@ -91,7 +94,7 @@ contract AgentBond is ReentrancyGuard {
     // --- agent: fund and manage the bond ---
 
     /// @notice Top up the caller's bond. Caller must `approve` this contract on USDC first.
-    ///         Records the balance actually received (fee-on-transfer / rebasing safe).
+    ///         Records the balance actually received (balanceOf delta), not the requested amount.
     function deposit(uint256 amount) external nonReentrant {
         require(amount > 0, "AMOUNT_ZERO");
         uint256 balBefore = usdc.balanceOf(address(this));

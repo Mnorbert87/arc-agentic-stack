@@ -101,10 +101,10 @@ contract CommitStake is ReentrancyGuard {
 
         id = nextId++;
 
-        // Balance-delta custody: record what actually arrived, not what was asked for.
-        // Makes the escrow solvent even against fee-on-transfer / rebasing tokens — a later
-        // claim/slash can never drain another commitment's funds. (Real Arc USDC is 1:1, but
-        // this keeps the primitive safe for any ERC-20 a builder might point it at.)
+        // Balance-delta accounting: book what actually arrived (balanceOf delta), not what was
+        // asked for, so a later claim/slash never pays out more than the escrow received.
+        // Unit-tested with fee-on-transfer and no-return tokens; the production token is Arc
+        // USDC (standard 1:1 ERC-20). Other exotic ERC-20 behaviours are out of scope.
         uint256 balBefore = usdc.balanceOf(address(this));
         _safeTransferFrom(msg.sender, address(this), amount);
         uint256 received = usdc.balanceOf(address(this)) - balBefore;

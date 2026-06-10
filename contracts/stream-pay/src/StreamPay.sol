@@ -109,10 +109,10 @@ contract StreamPay is ReentrancyGuard {
 
         id = nextId++;
 
-        // Balance-delta custody: record what actually arrived, not what was asked for. Keeps the
-        // escrow solvent even against fee-on-transfer / rebasing tokens — one stream can never
-        // drain another's funds. (Real Arc USDC is 1:1, but this keeps the primitive safe for any
-        // ERC-20 a builder might point it at.)
+        // Balance-delta accounting: book what actually arrived (balanceOf delta), not what was
+        // asked for, so one stream is never credited more than the escrow actually received.
+        // Unit-tested with fee-on-transfer and no-return tokens; the production token is Arc
+        // USDC (standard 1:1 ERC-20). Other exotic ERC-20 behaviours are out of scope.
         uint256 balBefore = usdc.balanceOf(address(this));
         _safeTransferFrom(msg.sender, address(this), deposit);
         uint256 received = usdc.balanceOf(address(this)) - balBefore;
