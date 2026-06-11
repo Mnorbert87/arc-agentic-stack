@@ -286,6 +286,24 @@
     <p class="section-sub" style="margin-top:12px;">A buyer agent pays an API per request over the <a href="https://www.x402.org/" style="color:var(--muted);">x402</a> pattern (HTTP <code>402</code>), settled per second of use on Arc via StreamPay. The <code>402 → 200</code> gate is bound to a live on-chain payment — <a href="https://github.com/Mnorbert87/arc-agentic-stack/blob/main/x402-demo/SAMPLE_RUN.md" style="color:var(--muted);">verified tx transcript</a>.</p>
   </div>
 
+  <!-- BUILT ON THE STACK -->
+  <h3 class="section-h rise d5">Built on the stack</h3>
+  <p class="section-sub rise d5">The primitives aren't the product — what you compose from them is. Here's the first one.</p>
+  <div class="products rise d5" style="grid-template-columns:1fr; max-width:680px; margin:0 auto;">
+    <a class="product" href="./commit-stake/" data-card>
+      <div class="picon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#04111f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="ptag">First app</div>
+      <h3>CommitStake</h3>
+      <div class="role">The first app composed from the stack's primitives — an AI agent as verifier.</div>
+      <p>Stake USDC behind a goal; a verifier confirms before the deadline, or the stake is slashed to a beneficiary. The verifier can be an <b>AgentBond</b>-bonded AI agent with slashable skin in the game, paid its verification fee over a <b>StreamPay</b> stream — so the two primitives and the app close one loop. No owner, no admin keys, anyone can trigger the slash.</p>
+      <div class="pstat">
+        <div><b id="pCsAddr">0xc307…A9a2</b>contract</div>
+        <div><b>3</b>seeded commitments</div>
+      </div>
+      <span class="open">Open CommitStake <span class="arr">→</span></span>
+    </a>
+  </div>
+
   <!-- WHY / CIRCLE -->
   <h3 class="section-h rise d5">Built on Circle &amp; Arc</h3>
   <p class="section-sub rise d5">Stablecoin-native, deterministic settlement, no bridges or oracles in the trust path.</p>
@@ -319,8 +337,9 @@
 
   <div class="addr-bar rise d5">
     <span class="chip">Chain <code>5042002</code></span>
-    <a id="abLink" target="_blank" rel="noopener">AgentBond <code id="abAddr">—</code> ↗</a>
-    <a id="spLink" target="_blank" rel="noopener">StreamPay <code id="spAddr">—</code> ↗</a>
+    <a id="abLink" href="https://testnet.arcscan.app/address/0xB9b4d476bC383eE2951a3eC3A22779458cdBf8e0" target="_blank" rel="noopener">AgentBond <code id="abAddr">0xB9b4…f8e0</code> ↗</a>
+    <a id="spLink" href="https://testnet.arcscan.app/address/0x505739d33D85AD85D0f9eeE64856309782382450" target="_blank" rel="noopener">StreamPay <code id="spAddr">0x5057…2450</code> ↗</a>
+    <a id="csLink" href="https://testnet.arcscan.app/address/0xc307d9287707Ba04c03Dd653b4457E949129A9a2" target="_blank" rel="noopener">CommitStake <code id="csAddr">0xc307…A9a2</code> ↗</a>
     <a id="repoLink" href="https://github.com/Mnorbert87/arc-agentic-stack" target="_blank" rel="noopener">GitHub ↗</a>
   </div>
 

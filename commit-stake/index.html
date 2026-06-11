@@ -284,10 +284,10 @@
   </div>
 
   <div class="settings-bar rise d2">
-    <span class="chip">Contract <code id="csChip">—</code></span>
+    <span class="chip">Contract <code id="csChip">0xc307…A9a2</code></span>
     <span class="chip">USDC <code id="usdcChip">—</code></span>
     <button id="editAddrBtn" class="mini">Change</button>
-    <a id="explorer" class="chip" target="_blank" rel="noopener" style="text-decoration:none;color:var(--c2)">arcscan ↗</a>
+    <a id="explorer" class="chip" href="https://testnet.arcscan.app/address/0xc307d9287707Ba04c03Dd653b4457E949129A9a2" target="_blank" rel="noopener" style="text-decoration:none;color:var(--c2)">arcscan ↗</a>
   </div>
 
   <div class="tabs-wrap rise d3">
@@ -305,6 +305,7 @@
     <div class="panel">
       <h3>Create a commitment</h3>
       <p class="hint">Approves USDC, then locks it. The <code>verifier</code> decides pass/fail; the <code>beneficiary</code> receives the stake if you fail.</p>
+      <p class="hint" style="border-left:2px solid var(--c2); padding-left:10px; color:var(--c2);"><b>Silence defaults to fail</b> — if the verifier never resolves, the stake is slashed after the deadline. Choose a verifier you trust.</p>
       <div class="row">
         <div>
           <label>Verifier address</label>
@@ -332,6 +333,7 @@
         <button id="useMeBene" class="mini">Me as beneficiary</button>
         <button id="createBtn" class="primary" style="margin-left:auto;">Approve &amp; Create</button>
       </div>
+      <p id="degenHint" class="hint" style="display:none; color:#e0a020; margin-top:6px;">⚠ Self-verification defeats the purpose — for testing only. The staker, verifier and beneficiary should be three different parties.</p>
     </div>
   </section>
 
@@ -381,6 +383,7 @@
       <div class="step"><div class="num">1</div><div><b>Stake.</b> You lock USDC behind a goal, naming a verifier (who judges it) and a beneficiary (who gets the funds if you fail).</div></div>
       <div class="step"><div class="num">2</div><div><b>Resolve.</b> Before the deadline the verifier marks <b>pass</b> (stake unlocked for you) or <b>fail</b> (stake slashed to the beneficiary).</div></div>
       <div class="step"><div class="num">3</div><div><b>Claim or slash.</b> On pass, you claim your stake back. If the verifier stays silent past the deadline, <b>anyone</b> can trigger the slash — they can't grief you by going quiet.</div></div>
+      <p style="margin-top:18px; border-left:2px solid var(--c2); padding-left:12px;"><b>The verifier can be an AI agent.</b> Bond it with <b>AgentBond</b> so it has slashable skin in the game, and pay its verification fee over a <b>StreamPay</b> stream — that's how the full stack composes: CommitStake is the first app built on the two primitives.</p>
       <p style="margin-top:18px;">No owner, no admin keys, no protocol fee. It's a public building block — language tests, fitness goals, code challenges, accountability bets. Built on Arc, where USDC is the gas token.</p>
     </div>
   </section>
@@ -539,8 +542,18 @@ $("editAddrBtn").onclick = () => {
   if (v && ethers.isAddress(v.trim())) { localStorage.setItem("cs_addr", v.trim()); loadInfo(); }
   else if (v) toast("Invalid address", "bad");
 };
-$("useMeVerifier").onclick = () => account ? ($("cVerifier").value = account) : connect();
-$("useMeBene").onclick = () => account ? ($("cBeneficiary").value = account) : connect();
+function checkDegenerate() {
+  const me = (account || "").toLowerCase();
+  const v = $("cVerifier").value.trim().toLowerCase();
+  const b = $("cBeneficiary").value.trim().toLowerCase();
+  // degenerate: staker == verifier OR staker == beneficiary OR verifier == beneficiary
+  const bad = (me && (me === v || me === b)) || (v && v === b);
+  $("degenHint").style.display = bad ? "block" : "none";
+}
+$("useMeVerifier").onclick = () => { account ? ($("cVerifier").value = account) : connect(); checkDegenerate(); };
+$("useMeBene").onclick = () => { account ? ($("cBeneficiary").value = account) : connect(); checkDegenerate(); };
+$("cVerifier").addEventListener("input", checkDegenerate);
+$("cBeneficiary").addEventListener("input", checkDegenerate);
 
 $("createBtn").onclick = async () => {
   if (needWallet()) return;
