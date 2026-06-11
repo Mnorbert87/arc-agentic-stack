@@ -325,10 +325,6 @@ contract CommitStakeV2 is ReentrancyGuard {
     ///         the StreamPay stream ITSELF (sender = this contract, recipient = verifier). The
     ///         sender-right is what lets the slash branches cancel the stream atomically and
     ///         read the verifier's actually-accrued fee from on-chain state (§7, §7a).
-    // Slither (STATIC_ANALYSIS.md): reentrancy flags are FP — `nonReentrant` mutex + balance-delta
-    // accounting around the trusted Arc-USDC / audited AgentBond+StreamPay callees; timestamp use is
-    // the by-design >=180s window mechanism (VERIFIER_ECONOMICS section 7).
-    // slither-disable-next-line reentrancy-balance,reentrancy-benign,timestamp
     function create(CreateParams calldata p) external nonReentrant returns (uint256 id) {
         require(p.amount > 0, "AMOUNT_ZERO");
         require(p.verifier != address(0), "VERIFIER_ZERO");
@@ -438,8 +434,6 @@ contract CommitStakeV2 is ReentrancyGuard {
     ///         challenge window — no stake, fee, or bond moves here. The verdict becomes final
     ///         (and money moves) at `finalize` after the window closes unchallenged, or at the
     ///         arbiter's ruling if challenged.
-    // Slither (STATIC_ANALYSIS.md): timestamp use is the by-design window/deadline mechanism (FP).
-    // slither-disable-next-line timestamp
     function resolve(uint256 id, bool passed) external nonReentrant {
         Commitment storage c = commitments[id];
         require(c.status == Status.Active, "NOT_ACTIVE");
@@ -459,9 +453,6 @@ contract CommitStakeV2 is ReentrancyGuard {
     ///         - `pass` verdict -> only the BENEFICIARY may challenge (it claims it was NOT).
     ///         Caller must `approve` this contract for the bond on USDC first. The challenge
     ///         routes the commitment to the arbiter named at create.
-    // Slither (STATIC_ANALYSIS.md): reentrancy + timestamp flags are FP — `nonReentrant` mutex,
-    // trusted-token balance-delta, by-design window mechanism.
-    // slither-disable-next-line reentrancy-balance,reentrancy-benign,reentrancy-no-eth,timestamp
     function challenge(uint256 id) external nonReentrant {
         Commitment storage c = commitments[id];
         require(c.status == Status.Resolved, "NOT_RESOLVED");
@@ -502,9 +493,6 @@ contract CommitStakeV2 is ReentrancyGuard {
     ///           fee stream is cancelled atomically (this contract holds the sender-right);
     ///           the unstreamed remainder returns to the staker. The challenger's bond is
     ///           refunded minus the arbiter fee.
-    // Slither (STATIC_ANALYSIS.md): reentrancy + timestamp flags are FP — `nonReentrant` mutex,
-    // trusted-token callees, by-design window mechanism.
-    // slither-disable-next-line reentrancy-no-eth,timestamp
     function arbitrate(uint256 id, bool overturn) external nonReentrant {
         Commitment storage c = commitments[id];
         require(c.status == Status.Challenged, "NOT_CHALLENGED");
@@ -569,9 +557,6 @@ contract CommitStakeV2 is ReentrancyGuard {
     ///           CLOSED: the original verdict stands and pays out, the slice is released, the
     ///           challenge bond is returned in full (a silent arbiter proves nothing frivolous)
     ///           and the arbiter is NOT paid. No ruling, no punishment, nobody profits.
-    // Slither (STATIC_ANALYSIS.md): reentrancy + timestamp flags are FP — `nonReentrant` mutex,
-    // trusted-token callees, by-design window mechanism.
-    // slither-disable-next-line reentrancy-no-eth,timestamp
     function finalize(uint256 id) external nonReentrant {
         Commitment storage c = commitments[id];
 
@@ -610,9 +595,6 @@ contract CommitStakeV2 is ReentrancyGuard {
     ///         transaction (spec §7: a verifier that does no work earns nothing more); the
     ///         unstreamed remainder returns to the staker. Fully on-chain provable; no oracle,
     ///         no arbiter. Terminal.
-    // Slither (STATIC_ANALYSIS.md): reentrancy + timestamp flags are FP — `nonReentrant` mutex,
-    // trusted-token callees, by-design expiry mechanism.
-    // slither-disable-next-line reentrancy-no-eth,timestamp
     function slashVerifierExpired(uint256 id) external nonReentrant {
         Commitment storage c = commitments[id];
         require(c.status == Status.Active, "NOT_ACTIVE");
@@ -700,9 +682,6 @@ contract CommitStakeV2 is ReentrancyGuard {
 
     /// @dev Route a leg of the posted challenge bond, skipping empty legs.
     function _routeChallengeBond(uint256 id, address to, uint256 amount) private {
-        // Slither incorrect-equality (STATIC_ANALYSIS.md): `== 0` here only skips an empty bond leg,
-        // not a balance/oracle strict-equality. Benign.
-        // slither-disable-next-line incorrect-equality
         if (amount == 0) return;
         totalEscrowed -= amount;
         _safeTransfer(to, amount);
@@ -784,32 +763,22 @@ contract CommitStakeV2 is ReentrancyGuard {
     }
 
     // --- safe ERC-20 helpers (tolerate non-standard no-return tokens) ---
-    // Slither low-level-calls + incorrect-equality (STATIC_ANALYSIS.md): the raw `.call` and the
-    // `data.length == 0` check ARE the OZ-style SafeERC20 wrapper, deliberately built to tolerate
-    // Arc-USDC / no-return tokens. The `data.length == 0` is a length test, not a strict balance
-    // equality. Intentional, by-design.
 
     function _safeTransfer(address to, uint256 amount) private {
-        // slither-disable-next-line low-level-calls
         (bool ok, bytes memory data) =
             address(usdc).call(abi.encodeWithSelector(IERC20.transfer.selector, to, amount));
-        // slither-disable-next-line incorrect-equality
         require(ok && (data.length == 0 || abi.decode(data, (bool))), "TRANSFER_FAILED");
     }
 
     function _safeTransferFrom(address from, address to, uint256 amount) private {
-        // slither-disable-next-line low-level-calls
         (bool ok, bytes memory data) =
             address(usdc).call(abi.encodeWithSelector(IERC20.transferFrom.selector, from, to, amount));
-        // slither-disable-next-line incorrect-equality
         require(ok && (data.length == 0 || abi.decode(data, (bool))), "TRANSFER_FROM_FAILED");
     }
 
     function _safeApprove(address spender, uint256 amount) private {
-        // slither-disable-next-line low-level-calls
         (bool ok, bytes memory data) =
             address(usdc).call(abi.encodeWithSelector(IERC20.approve.selector, spender, amount));
-        // slither-disable-next-line incorrect-equality
         require(ok && (data.length == 0 || abi.decode(data, (bool))), "APPROVE_FAILED");
     }
 }

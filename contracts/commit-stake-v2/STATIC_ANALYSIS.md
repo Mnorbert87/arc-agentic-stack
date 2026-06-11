@@ -57,22 +57,38 @@ adversarial suite proves. Symbolic verification (HALMOS_VERIFICATION.md) targets
 surplus-positivity and no-double-pay invariants directly, as the positive complement to this
 negative (find-a-bug) pass.
 
-## Optional CI
+## Suppressions: per-instance triage DB (NOT inline comments) — 2026-06-11
 
-A `.github/workflows/static-analysis.yml` (Slither + Aderyn on push) is worth adding, **but** the
-local `gh` token has **no `workflow` scope** — pushing `.github/workflows/**` is rejected. If added,
-it must go in a **separate commit** Főnök pushes after `gh auth refresh -s workflow`; do not let the
-rest of the work fail on it. (See memory `reference_gh_token_no_workflow_scope`.)
+The by-design findings above are suppressed in a **Slither per-finding triage database**
+(`slither.db.json`, committed beside `foundry.toml`), **not** inline `slither-disable` comments.
+This choice is deliberate and load-bearing:
 
-## Annotations landed in source (2026-06-11)
+- **Why not inline directives:** a `// slither-disable-next-line` comment changes the contract
+  source, which changes the Solidity metadata hash, which changes the deployed bytecode's metadata
+  trailer. That would break the **exact-match** between this repo's source and the on-chain
+  `CommitStakeV2` (`0x1f1CA31…698CA9`) — the very claim JUDGES.md / README make. The triage DB lives
+  *outside* the compiled source, so `src/CommitStakeV2.sol` stays **byte-identical to the deployed,
+  Blockscout-exact-verified source** (`git diff <deploy-commit> -- src/CommitStakeV2.sol` is empty).
+- **Why not `detectors_to_exclude`:** a global exclude would also silence a *future, genuine*
+  finding from the same detector. The triage DB keys each suppression to a specific finding
+  **instance** (file + line + content hash). The 25 current by-design instances are triaged; a NEW
+  finding (new code/line) has a different hash, is not in the DB, and **surfaces**.
 
-Every by-design item above now carries an inline `// slither-disable-next-line <detector>` directive
-in `src/CommitStakeV2.sol`, each with a one-line reason pointing back to this grid — so the source
-and this `.md` tell one truth, and a future reviewer sees *why* a finding is absent from the code
-itself. Verified: with the directives, `slither . --exclude-dependencies --fail-pedantic` reports
-**0 results / exit 0**. The signal is genuine, not always-green — removing any single directive makes
-the corresponding finding re-surface and the run exit non-zero (demonstrated by temporarily dropping
-the `resolve` timestamp directive → `1 result`, exit 255). The CI must therefore run Slither
-**with** these in-source directives and `--fail-pedantic`, so the pipeline goes red only on a *new,
-un-accepted* finding. The directive detector names: `reentrancy-balance`, `reentrancy-benign`,
-`reentrancy-no-eth`, `timestamp`, `incorrect-equality`, `low-level-calls`.
+**Verified (2026-06-11):**
+- With the DB, `slither . --exclude-dependencies --fail-pedantic` → **0 results / exit 0** (the gate
+  is green on the accepted findings — not `slither || true`).
+- It is **not** always-green: a temporary new `block.timestamp` comparison made the run report
+  **2 results / exit 255** (the new instance is not in the DB and fails the build); reverted.
+- The 25 triaged instances correspond exactly to the **by-design** rows above:
+  `reentrancy-balance` (3), `reentrancy-no-eth` (7), `reentrancy-benign` (3), `timestamp` (6),
+  `incorrect-equality` (3), `low-level-calls` (3).
+
+The CI gating job runs `slither . --exclude-dependencies --fail-pedantic` in this directory, which
+auto-reads `slither.db.json` — so the pipeline goes red only on a **new, un-accepted** finding while
+the source remains exact-match-reproducible.
+
+## CI
+
+`.github/workflows/static-analysis.yml` (pub repo): informational Slither + Aderyn over the
+Phase-1 primitives (artifacts uploaded) **plus** a gating `slither --fail-pedantic` job for
+`commit-stake-v2` backed by the triage DB above. Pushed and green on GitHub Actions.

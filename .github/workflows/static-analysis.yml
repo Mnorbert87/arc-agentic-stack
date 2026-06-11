@@ -5,10 +5,12 @@ name: static-analysis
 #     already-audited contracts surface only triaged false-positives (reentrancy closed by the
 #     per-entry nonReentrant mutex + trusted-token callees; timestamp/low-level-call by-design,
 #     see each STATIC_ANALYSIS / triage). Reports upload as artifacts; the gate is `tests`.
-#   * `static-gate-commit-stake-v2` — GATING. commit-stake-v2 carries inline
-#     `// slither-disable-next-line <detector>` directives for every by-design finding (one truth
-#     with STATIC_ANALYSIS.md), so `slither --fail-pedantic` is 0 results / exit 0 today and goes
-#     RED only on a NEW, un-accepted finding. This is a real signal, not `slither || true`.
+#   * `static-gate-commit-stake-v2` — GATING. The by-design findings are suppressed in a Slither
+#     per-instance triage DB (`contracts/commit-stake-v2/slither.db.json`), NOT inline comments —
+#     so `src/CommitStakeV2.sol` stays byte-identical to the deployed, exact-match-verified source
+#     (see STATIC_ANALYSIS.md). `slither --fail-pedantic` auto-reads the DB: 0 results / exit 0
+#     today, RED on a NEW, un-accepted finding (a new instance has a different hash, not in the DB).
+#     A real signal, not `slither || true`, and not a global detector exclude.
 
 on:
   push:
