@@ -1,0 +1,66 @@
+name: static-analysis
+
+# Slither + Aderyn over every Foundry contract project. The findings are INFORMATIONAL: this
+# stack's only "High" flags are triaged false-positives (reentrancy is closed by the per-entry
+# nonReentrant mutex + trusted-token callee set; timestamp/low-level-call are by-design) — see
+# STATIC_ANALYSIS.md for the full triage. The steps therefore upload reports as artifacts and do
+# not gate the build (continue-on-error); the gate is the `tests` workflow (forge test).
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  static:
+    name: ${{ matrix.project }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - contracts/agent-bond
+          - contracts/stream-pay
+          - contracts/commit-stake
+    defaults:
+      run:
+        working-directory: ${{ matrix.project }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Install forge-std
+        run: git clone --depth 1 --branch v1.16.1 https://github.com/foundry-rs/forge-std lib/forge-std
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Slither + solc 0.8.24
+        run: |
+          pipx install slither-analyzer
+          pipx install solc-select
+          solc-select install 0.8.24
+          solc-select use 0.8.24
+
+      - name: Slither (informational)
+        id: slither
+        continue-on-error: true
+        run: slither . --exclude-dependencies --checklist > slither-report.md 2>&1 || true
+
+      - name: Aderyn (informational)
+        continue-on-error: true
+        run: npx -y @cyfrin/aderyn@0.6.8 --src src -o aderyn-report.md . || true
+
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-analysis-${{ strategy.job-index }}
+          path: |
+            ${{ matrix.project }}/slither-report.md
+            ${{ matrix.project }}/aderyn-report.md
+          if-no-files-found: ignore
