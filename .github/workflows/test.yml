@@ -15,6 +15,7 @@ jobs:
           - contracts/agent-bond
           - contracts/stream-pay
           - contracts/commit-stake
+          - contracts/commit-stake-v2
     defaults:
       run:
         working-directory: ${{ matrix.project }}
