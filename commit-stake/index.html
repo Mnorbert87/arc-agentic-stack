@@ -389,8 +389,63 @@
   </section>
   </div>
 
+  <!-- ════════════════════ V2 — BONDED VERIFIER (appended; V1 above is unchanged) ════════════════════ -->
+  <section id="v2" class="rise" style="margin-top:64px; scroll-margin-top:80px; border-top:1px solid var(--line); padding-top:48px;">
+    <div class="hero" style="margin:0 0 26px;">
+      <div class="eyebrow">V2 · bonded verifier · §7a routing</div>
+      <h2 style="font-size:clamp(26px,4.4vw,42px);">The verifier now has<br>skin in the game</h2>
+      <p>V2 locks a slice of the verifier's <b>AgentBond</b> bond behind every commitment and streams its fee over <b>StreamPay</b>. Lie or vanish and the slice is slashed — the harmed party gets only <b>damage</b>, the surplus is <b>burned to a dead address</b>. Everything below is read live from Arc; every routing row links to its real transaction.</p>
+    </div>
+
+    <div class="settings-bar" style="margin-bottom:18px;">
+      <span class="chip">V2 contract <code id="v2Chip">0x1f1C…8CA9</code></span>
+      <a id="v2Explorer" class="chip" target="_blank" rel="noopener" style="text-decoration:none;color:var(--c2)">arcscan ↗</a>
+      <a id="v2AbLink" class="chip" target="_blank" rel="noopener" style="text-decoration:none;color:var(--c2)">AgentBond ↗</a>
+      <a id="v2SpLink" class="chip" target="_blank" rel="noopener" style="text-decoration:none;color:var(--c2)">StreamPay ↗</a>
+      <a id="v2BurnLink" class="chip" target="_blank" rel="noopener" style="text-decoration:none;color:var(--bad)">🔥 burn 0x…dEaD ↗</a>
+    </div>
+
+    <div class="stat-row" style="margin-bottom:20px;">
+      <div class="stat"><b id="v2Total">—</b><small>Seeded commitments</small></div>
+      <div class="stat"><b id="v2Burned">—</b><small>USDC burned (§7a surplus)</small></div>
+      <div class="stat"><b id="v2Bond">—</b><small>Verifier bond slashed</small></div>
+    </div>
+
+    <!-- §7a routing table — each row bound to a live branch + its real tx -->
+    <div class="panel">
+      <h3>§7a routing — three branches proven on-chain</h3>
+      <p class="hint">Three seeded branches link to their real Arc transactions in the <b>proof</b> column; their <b>outcome</b> is read live from <code>get(id)</code> (the 🔥 burn transfers go to <code>0x…dEaD</code>). The remaining routing outcomes are shown as <b>mechanism — not seeded in this demo</b>, with no on-chain proof.</p>
+      <div style="overflow-x:auto;">
+        <table id="v2table" style="width:100%; border-collapse:collapse; font-size:13px;">
+          <thead>
+            <tr style="text-align:left; color:var(--muted); font-size:11.5px; text-transform:uppercase; letter-spacing:.5px;">
+              <th style="padding:10px 8px; border-bottom:1px solid var(--line-2);">Branch</th>
+              <th style="padding:10px 8px; border-bottom:1px solid var(--line-2);">Live outcome</th>
+              <th style="padding:10px 8px; border-bottom:1px solid var(--line-2);">Stake</th>
+              <th style="padding:10px 8px; border-bottom:1px solid var(--line-2);">Slashed slice → §7a</th>
+              <th style="padding:10px 8px; border-bottom:1px solid var(--line-2);">Proof (tx)</th>
+            </tr>
+          </thead>
+          <tbody id="v2tbody">
+            <tr><td colspan="5" class="empty" style="padding:22px;">Loading live state…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- live seeded-branch cards -->
+    <div class="panel">
+      <div class="dir-head">
+        <h3 style="margin:0;">Seeded V2 commitments <span class="count-pill" id="v2Count">0</span></h3>
+        <button id="v2Refresh" class="mini">↻ Refresh</button>
+      </div>
+      <p class="hint" style="margin-top:10px;">Read straight from the public Arc RPC against the V2 address — no wallet needed.</p>
+      <div id="v2list" class="grid"></div>
+    </div>
+  </section>
+
   <footer>
-    CommitStake · Arc Testnet (chain 5042002) · <a id="footExplorer" target="_blank" rel="noopener">view contract on arcscan</a>
+    CommitStake · Arc Testnet (chain 5042002) · <a id="footExplorer" target="_blank" rel="noopener">view V1 contract on arcscan</a> · <a id="footExplorerV2" target="_blank" rel="noopener">view V2 contract ↗</a>
   </footer>
 </main>
 
@@ -678,6 +733,145 @@ if (window.ethereum) {
 }
 (() => { const d = new Date(Date.now() + 7 * 864e5); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); $("cDeadline").value = d.toISOString().slice(0, 16); })();
 loadInfo();
+</script>
+
+<!-- ════ V2 live reader (separate module; V1 script above untouched) ════ -->
+<script type="module">
+import { ethers } from "https://esm.sh/ethers@6.13.4";
+
+const RPC = "https://rpc.testnet.arc.network";
+const CHAIN_ID = 5042002;
+const EXPLORER = "https://testnet.arcscan.app";
+const V2_ADDR   = "0x1f1CA31bC36a95a3909628F1bA97970E20698CA9";
+const AB_ADDR   = "0xB9b4d476bC383eE2951a3eC3A22779458cdBf8e0";
+const SP_ADDR   = "0x505739d33D85AD85D0f9eeE64856309782382450";
+const BURN_ADDR = "0x000000000000000000000000000000000000dEaD";
+
+const V2_ABI = [
+  "function nextId() view returns (uint256)",
+  "function usdc() view returns (address)",
+  "function agentBond() view returns (address)",
+  "function streamPay() view returns (address)",
+  "function get(uint256 id) view returns (tuple(address staker,address verifier,address beneficiary,address arbiter,uint256 amount,uint256 verifierSlice,uint256 bondObligationId,uint256 challengeBond,uint256 challengeBondPaid,uint256 arbiterFee,uint256 feeStreamId,uint64 deadline,uint64 challengeWindow,uint64 arbiterDeadline,uint64 resolvedAt,uint64 challengedAt,bool resolvedPass,uint8 status,uint8 outcome))"
+];
+const ERC20_ABI = ["function decimals() view returns (uint8)"];
+const STATUS2  = ["None","Active","Resolved","Challenged","Finalized","Expired"];
+const OUTCOME2 = ["None","CleanPass","CleanFail","UpheldPass","UpheldFail","OverturnedToPass","OverturnedToFail","SilencePass","SilenceFail","LivenessSlash"];
+
+// Proof transactions for the current seed (historical artifacts; the on-chain STATE below is read live).
+const SEED = [
+  { id:1, name:"A · Positive",  txs:[["create","0xe98820e0290f483708e15b30f1139852548738341da5d8685d7a3db6d9c07ebc"],["resolve(true)","0xa415cc6c59ce5233bf5372423b55f15c0f0bf9f518e3058bf91f98f808d5fa27"],["finalize","0xb527eee462ce25f4043352da8e8ce5c4aec1ce5aafb7cbaba9e22863df966e29"]] },
+  { id:2, name:"B · Liveness",  burn:"0x7bf59845abadf3847061b5997e96e303a959d722c8a7283b160b3c82b14aa6bd", txs:[["create","0xf37ccad6db28a858874bc4a47e06d19fce4f5cfdc9f88407b7f8ebf862e7e80b"],["slashVerifierExpired 🔥","0x7bf59845abadf3847061b5997e96e303a959d722c8a7283b160b3c82b14aa6bd"]] },
+  { id:3, name:"C · Overturn",  burn:"0x97f31e7a590af4ecc2f88c8f34943fe95be41391c9c3a4e3895d9a3d13c45435", txs:[["create","0x2ae5b324f4b47343dd99dd12902ddf09dd657d651acf0e964d6da076e1c8db08"],["resolve(false)","0x8ad46893ab71f04dce12c37cb47d4f0d4eb21b714870d811139d427aa0695692"],["challenge","0x0eab5b82beb96233d2da95488ae84e9b6a36d4be2866aa304aeb19837892d999"],["arbitrate(overturn) 🔥","0x97f31e7a590af4ecc2f88c8f34943fe95be41391c9c3a4e3895d9a3d13c45435"]] }
+];
+
+const $ = (id) => document.getElementById(id);
+const short = (a) => a ? a.slice(0,6) + "…" + a.slice(-4) : "—";
+const txLink = (label,h) => `<a href="${EXPLORER}/tx/${h}" target="_blank" rel="noopener" style="color:var(--c2); text-decoration:none; white-space:nowrap;">${label} ↗</a>`;
+const read = new ethers.JsonRpcProvider(RPC, CHAIN_ID);
+let dec = 6;
+const fmt = (v) => Number(ethers.formatUnits(v, dec));
+const usd = (v) => fmt(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+
+// static chips/links
+$("v2Chip").textContent = short(V2_ADDR);
+$("v2Explorer").href   = `${EXPLORER}/address/${V2_ADDR}`;
+$("v2AbLink").href     = `${EXPLORER}/address/${AB_ADDR}`;
+$("v2SpLink").href     = `${EXPLORER}/address/${SP_ADDR}`;
+$("v2BurnLink").href   = `${EXPLORER}/address/${BURN_ADDR}`;
+$("footExplorerV2").href = `${EXPLORER}/address/${V2_ADDR}`;
+
+// routing description per live outcome
+function routing(outcome, c) {
+  switch (OUTCOME2[outcome]) {
+    case "CleanPass":  return { stake:"→ staker (reclaimed)", slice:"released to verifier · no burn", burned:0n };
+    case "CleanFail":  return { stake:"→ beneficiary", slice:"released to verifier · no burn", burned:0n };
+    case "LivenessSlash": return { stake:"returned → staker", slice:`damage 0 → staker · <b style="color:var(--bad)">${usd(c.verifierSlice)} burned</b>`, burned:c.verifierSlice };
+    case "OverturnedToPass": { const b=c.verifierSlice - c.arbiterFee; return { stake:"→ staker (corrected)", slice:`damage ${usd(c.arbiterFee)} → staker · <b style="color:var(--bad)">${usd(b)} burned</b>`, burned:b }; }
+    case "OverturnedToFail": { const b=c.verifierSlice - c.arbiterFee; return { stake:"→ beneficiary (corrected)", slice:`damage ${usd(c.arbiterFee)} → beneficiary · <b style="color:var(--bad)">${usd(b)} burned</b>`, burned:b }; }
+    default: return { stake:"—", slice:"—", burned:0n };
+  }
+}
+
+async function loadV2() {
+  try {
+    const cs = new ethers.Contract(V2_ADDR, V2_ABI, read);
+    const [next, u] = await Promise.all([cs.nextId(), cs.usdc()]);
+    try { dec = Number(await new ethers.Contract(u, ERC20_ABI, read).decimals()); } catch { dec = 6; }
+    const total = Math.max(0, Number(next) - 1);
+    $("v2Total").textContent = total;
+    $("v2Count").textContent = total;
+
+    // read every seeded branch live
+    let burnedSum = 0n, slashedSum = 0n, liveRows = 0;
+    const tbody = $("v2tbody"); const list = $("v2list");
+    tbody.innerHTML = ""; list.innerHTML = "";
+    for (const s of SEED) {
+      if (s.id > total) continue;
+      const c = await cs.get(s.id);
+      const st = Number(c.status), ocn = Number(c.outcome);
+      const terminal = st >= 4; // Finalized(4) / Expired(5) are the only terminal states
+      const r = terminal ? routing(ocn, c) : { stake:"pending", slice:"pending", burned:0n };
+      const outLabel = terminal ? OUTCOME2[ocn] : `pending · ${STATUS2[st]}`;
+      burnedSum += r.burned;
+      if (r.burned > 0n) slashedSum += c.verifierSlice;
+      liveRows++;
+
+      // table row
+      const proof = s.txs.map(([l,h]) => txLink(l,h)).join(" · ");
+      const tr = document.createElement("tr");
+      tr.style.borderBottom = "1px solid var(--line)";
+      tr.innerHTML = `
+        <td style="padding:12px 8px; font-weight:600;">${s.name}</td>
+        <td style="padding:12px 8px;"><span class="badge">${outLabel}</span></td>
+        <td style="padding:12px 8px; color:var(--muted);">${r.stake}</td>
+        <td style="padding:12px 8px; color:var(--muted);">${r.slice}</td>
+        <td style="padding:12px 8px;">${proof}</td>`;
+      tbody.appendChild(tr);
+
+      // live card
+      const el = document.createElement("div"); el.className = "card";
+      el.innerHTML = `
+        <div class="top"><span class="id">#${s.id} · ${s.name}</span><span class="badge">${STATUS2[Number(c.status)]}</span></div>
+        <div class="amt">${usd(c.amount)} USDC <span style="font-size:12px;color:var(--faint)">staked</span></div>
+        <div class="meta">
+          outcome <b style="color:var(--c2)">${outLabel}</b><br>
+          verifier slice ${usd(c.verifierSlice)} USDC${r.burned>0n?` · <span style="color:var(--bad)">🔥 ${usd(r.burned)} burned</span>`:""}<br>
+          verifier ${short(c.verifier)}<br>arbiter ${short(c.arbiter)}
+          ${s.burn?`<br>${txLink("🔥 burn transfer", s.burn)}`:""}
+        </div>`;
+      el.addEventListener("mousemove",(ev)=>{const rb=el.getBoundingClientRect();el.style.setProperty("--mx",(ev.clientX-rb.left)+"px");el.style.setProperty("--my",(ev.clientY-rb.top)+"px");});
+      list.appendChild(el);
+    }
+    if (!liveRows) {
+      tbody.innerHTML = `<tr><td colspan="5" class="empty" style="padding:22px;">No V2 commitments found at this address.</td></tr>`;
+    } else {
+      // non-seeded §7a outcomes — routing mechanism only, not demoed (no on-chain proof for these rows)
+      const MECH = [
+        ["CleanFail", "→ beneficiary", "released to verifier · no burn"],
+        ["UpheldFail (frivolous challenge)", "→ beneficiary", "challenger bond slashed · slice released"]
+      ];
+      for (const [oc, stake, slice] of MECH) {
+        const tr = document.createElement("tr");
+        tr.style.borderBottom = "1px solid var(--line)";
+        tr.style.opacity = "0.55";
+        tr.innerHTML = `
+          <td style="padding:12px 8px; font-weight:600; color:var(--muted);">— mechanism</td>
+          <td style="padding:12px 8px;"><span class="badge">${oc}</span></td>
+          <td style="padding:12px 8px; color:var(--muted);">${stake}</td>
+          <td style="padding:12px 8px; color:var(--muted);">${slice}</td>
+          <td style="padding:12px 8px; color:var(--faint);">not seeded in this demo</td>`;
+        tbody.appendChild(tr);
+      }
+    }
+    $("v2Burned").textContent = usd(burnedSum);
+    $("v2Bond").textContent = usd(slashedSum);
+  } catch (e) {
+    $("v2tbody").innerHTML = `<tr><td colspan="5" class="empty" style="padding:22px;">Live read failed: ${(e.shortMessage||e.message)}</td></tr>`;
+  }
+}
+$("v2Refresh").onclick = loadV2;
+loadV2();
 </script>
 </body>
 </html>

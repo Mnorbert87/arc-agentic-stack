@@ -296,11 +296,13 @@
       <h3>CommitStake</h3>
       <div class="role">The first app composed from the stack's primitives — an AI agent as verifier.</div>
       <p>Stake USDC behind a goal; a verifier confirms before the deadline, or the stake is slashed to a beneficiary. The verifier can be an <b>AgentBond</b>-bonded AI agent with slashable skin in the game, paid its verification fee over a <b>StreamPay</b> stream — so the two primitives and the app close one loop. No owner, no admin keys, anyone can trigger the slash.</p>
+      <p style="margin-top:0;"><b style="color:var(--c2);">V2 — bonded verifier:</b> the verifier's bond slice is now locked in AgentBond and slashed on a lie or no-show, with §7a routing (damage to the harmed party, surplus <b>burned</b>) proven on-chain across three seeded branches.</p>
       <div class="pstat">
-        <div><b id="pCsAddr">0xc307…A9a2</b>contract</div>
-        <div><b>3</b>seeded commitments</div>
+        <div><b id="pCsAddr">0xc307…A9a2</b>V1 contract</div>
+        <div><b id="pCsV2Addr">0x1f1C…8CA9</b>V2 · bonded verifier</div>
+        <div><b>3 + 3</b>seeded commitments</div>
       </div>
-      <span class="open">Open CommitStake <span class="arr">→</span></span>
+      <span class="open">Open CommitStake — V1 &amp; V2 <span class="arr">→</span></span>
     </a>
   </div>
 
@@ -339,7 +341,8 @@
     <span class="chip">Chain <code>5042002</code></span>
     <a id="abLink" href="https://testnet.arcscan.app/address/0xB9b4d476bC383eE2951a3eC3A22779458cdBf8e0" target="_blank" rel="noopener">AgentBond <code id="abAddr">0xB9b4…f8e0</code> ↗</a>
     <a id="spLink" href="https://testnet.arcscan.app/address/0x505739d33D85AD85D0f9eeE64856309782382450" target="_blank" rel="noopener">StreamPay <code id="spAddr">0x5057…2450</code> ↗</a>
-    <a id="csLink" href="https://testnet.arcscan.app/address/0xc307d9287707Ba04c03Dd653b4457E949129A9a2" target="_blank" rel="noopener">CommitStake <code id="csAddr">0xc307…A9a2</code> ↗</a>
+    <a id="csLink" href="https://testnet.arcscan.app/address/0xc307d9287707Ba04c03Dd653b4457E949129A9a2" target="_blank" rel="noopener">CommitStake V1 <code id="csAddr">0xc307…A9a2</code> ↗</a>
+    <a id="csV2Link" href="https://testnet.arcscan.app/address/0x1f1CA31bC36a95a3909628F1bA97970E20698CA9" target="_blank" rel="noopener">CommitStake V2 <code id="csV2Addr">0x1f1C…8CA9</code> ↗</a>
     <a id="repoLink" href="https://github.com/Mnorbert87/arc-agentic-stack" target="_blank" rel="noopener">GitHub ↗</a>
   </div>
 
