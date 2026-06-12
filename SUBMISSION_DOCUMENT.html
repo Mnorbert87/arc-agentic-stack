@@ -39,7 +39,8 @@
 
 <h1>Arc Agentic Stack</h1>
 <p class="sub">Trust and settlement primitives for autonomous agents, settled in USDC on Arc.</p>
-<span class="track-pill">CIRCLE STABLECOIN COMMERCE STACK CHALLENGE · ESCROW AND COMMERCE TRACK</span>
+<p class="lead" style="font-weight:600; color:#0a2540;">Most agentic projects show agents paying each other. They assume trust. We show what happens when an agent lies, and why lying is structurally unprofitable.</p>
+<span class="track-pill">CIRCLE STABLECOIN COMMERCE STACK CHALLENGE · TRACK 4, BEST AGENTIC ECONOMY EXPERIENCE ON ARC</span>
 
 <h2>1. Project Title</h2>
 <p><strong>Arc Agentic Stack.</strong> Three small, ownerless contracts that let an autonomous agent be trusted before it acts and paid while it works, all settled in USDC on Circle's Arc L1.</p>
@@ -56,7 +57,7 @@
 <p>It also plugs into the wider Arc agent ecosystem instead of sitting off to the side. The demo agents carry on-chain ERC-8004 identities in Arc's official registry, and an agent's bond capital can arrive cross-chain through Circle CCTP V2 before it ever posts a bond. ERC-8004 gives you identity and jobs. This stack adds the economic-assurance layer that is missing next to it.</p>
 
 <h2>3. Track</h2>
-<p><strong>Escrow and Commerce.</strong> CommitStakeV2 is the centerpiece. It is a commitment escrow where the verifier itself puts up a bond and can be slashed, so a buyer and a seller can put real money behind a deliverable and trust the outcome without trusting a privileged operator who presses "release." The stake, the slashed slice, and the burned surplus are all routed on chain in USDC, with no admin in the loop. It sits inside a small agent stack (AgentBond for trust, StreamPay for streaming pay), which is where the cross-chain onboarding and the ERC-8004 identity come from.</p>
+<p><strong>Track 4, Best Agentic Economy Experience on Arc.</strong> The stack is built for agent-to-agent commerce: an agent is trusted by stake, paid continuously as it works, and held accountable by a verifier that has its own money on the line. Every state change is a real USDC transaction on Arc. CommitStakeV2 is the piece that answers the question the other two leave open, which is what happens to the money when the agent or the verifier lies.</p>
 
 <h2>4. Circle Account Email</h2>
 <p><span class="todo">TO FILL: Főnök Circle-fiók email címe</span></p>
@@ -74,6 +75,8 @@
 
 <h2>6. Working MVP</h2>
 <p>It is live on Arc Testnet today, and you can verify it without trusting me. There is no backend. The frontends read live state straight from the public Arc RPC.</p>
+
+<p><strong>The proven, audited core.</strong> Three contracts, frozen and audited: CommitStakeV2, AgentBond, StreamPay. Everything in this block is about those three, and only those three.</p>
 <table>
   <tr><th>Contract</th><th>Address</th><th>Verified</th></tr>
   <tr><td>CommitStakeV2</td><td class="mono">0x1f1CA31bC36a95a3909628F1bA97970E20698CA9</td><td>exact-match ✅</td></tr>
@@ -83,9 +86,14 @@
 <ul>
   <li>Browse the live hub, no wallet needed: <a href="https://mnorbert87.github.io/arc-agentic-stack/">mnorbert87.github.io/arc-agentic-stack</a>.</li>
   <li>Two on-chain burns show the anti-collusion mechanism firing: 1.45 USDC from an overturn and 1.50 USDC from a liveness fail-closed, each a real <span class="mono">Transfer</span> to <span class="mono">0x…dEaD</span> you can open on the explorer.</li>
-  <li>The 79-test suite (unit, adversarial, cold-audit, fuzz, 10k-run invariants, and a Halmos symbolic spec) is green and reproduces with one command. The solvency invariant fuzzed with zero reverts.</li>
-  <li>Capital can come from another chain. I bridged 1 USDC from Base Sepolia into AgentBond through CCTP V2 and Bridge Kit. All three transactions are <span class="mono">status 1</span> (<span class="mono">depositForBurn</span>, <span class="mono">receiveMessage</span>, <span class="mono">deposit</span>), and the bond went from 36 to 37 USDC. The runnable code and transcript are in <span class="mono">cctp-demo/</span>.</li>
-  <li>The agents have real identities. Aiden (tokenId <span class="mono">471762</span>) and the bonded verifier (<span class="mono">471763</span>) are registered in Arc's ERC-8004 <span class="mono">IdentityRegistry</span>, with a 5/5 counterparty <span class="mono">giveFeedback</span> and a <span class="mono">setAgentWallet</span> binding on top, all on chain.</li>
+  <li>The 79-test suite (unit, adversarial, cold-audit, fuzz, 10k-run invariants, and a Halmos symbolic spec) is green and reproduces with one command. Mutation testing kills 84.5% of the mutants and 100% of the revert-class ones.</li>
+  <li>Halmos proves the hard properties at the property level, for all inputs, not just the cases a fuzzer happens to hit: solvency, surplus-positivity, no-double-pay, and the fee-residue bound. The two burns above are those same properties firing on chain.</li>
+</ul>
+
+<p><strong>Integration demos, built after the audit freeze.</strong> These show the core composing with the rest of the Arc agent ecosystem. They are real on-chain transactions, but they sit outside the audited core above, and I make no formal-verification claims about them.</p>
+<ul>
+  <li>Cross-chain capital onboarding. I bridged 1 USDC from Base Sepolia to Arc with CCTP V2 and Bridge Kit, then deposited it into AgentBond. Three transactions, all <span class="mono">status 1</span> (<span class="mono">depositForBurn</span>, <span class="mono">receiveMessage</span>, <span class="mono">deposit</span>), and the bond moved from 36 to 37 USDC. Code and transcript are in <span class="mono">cctp-demo/</span>.</li>
+  <li>On-chain agent identity. Aiden (tokenId <span class="mono">471762</span>) and the bonded verifier (<span class="mono">471763</span>) are registered in Arc's ERC-8004 <span class="mono">IdentityRegistry</span>, plus a 5/5 counterparty <span class="mono">giveFeedback</span> and an EIP-712 <span class="mono">setAgentWallet</span> binding.</li>
 </ul>
 
 <h2>7. Architecture Diagram</h2>
@@ -105,13 +113,15 @@
   <li><strong>Design depth:</strong> README.md, VERIFIER_ECONOMICS.md, THREAT_MODEL.md, and COLD_ECONOMIC_REVIEW.md.</li>
 </ul>
 
-<h2>10. Product Feedback (building on Arc and Circle)</h2>
+<h2>10. Circle Product Feedback</h2>
 <ul>
-  <li><strong>The USDC dual-decimals split is the number-one footgun.</strong> Native gas is 18-decimal, the ERC-20 is 6-decimal, and mixing them silently gives you amounts off by 10¹². A prominent doc callout, or a helper that surfaces the active denomination, would save every builder this bug. I keep all accounting in micro-USDC against the ERC-20 and handle gas separately in native units.</li>
-  <li><strong>USDC-as-gas is a real simplification.</strong> An agent's working capital and its gas budget are the same asset, so there is one balance to manage instead of two. For agent treasury logic that is a genuine ergonomic win, and it deserves to be a headline.</li>
+  <li><strong>USDC-as-gas is great until a thin wallet gets emptied mid-flow.</strong> Having the working capital and the gas budget be the same asset is a genuine win for agent treasury logic, one balance instead of two. The trap is that gas is now spent out of the same USDC you are trying to move, so a burner with just enough USDC for a transfer can fail when the gas comes out of that same balance, or get drained by a single estimate-then-send. What fixed it for me was funding a separate gas cushion first (about 0.5 to 1 USDC of headroom per actor) before the functional amounts, and never sizing a transfer to the exact balance. A "this is gas plus value, leave headroom" note in the quickstart would save people this.</li>
+  <li><strong>The USDC dual-decimals split is the number-one footgun.</strong> Native gas is 18-decimal, the ERC-20 is 6-decimal, and mixing them silently gives you amounts off by 10¹². I keep all accounting in micro-USDC against the ERC-20 and handle gas separately in native units. A prominent doc callout, or a helper that surfaces the active denomination, would save every builder this bug.</li>
+  <li><strong>Arc finality changed how I wrote the agent logic.</strong> Sub-second, no reorgs, so a slashed bond or a settled stream is final the moment the block lands. I deleted the "wait N confirmations and maybe retry" scaffolding I normally carry on other chains. For an autonomous agent that has to decide and move without a human watching, that determinism is the actual feature.</li>
   <li><strong>Block timestamps are not strictly monotonic on the testnet.</strong> That matters for per-second streaming accrual, and StreamPay defends against it. Worth saying out loud in the docs for anyone building time-based settlement.</li>
+  <li><strong>Circle Wallets signing for the agent worked with almost no Arc-specific code.</strong> The agent signed a full lifecycle (approve, bond, stream) through a developer-controlled wallet with the Entity Secret, so no private key on disk ever touched the chain. The only Arc-specific input was the <span class="mono">ARC-TESTNET</span> chain identifier; <span class="mono">estimateContractExecutionFee</span> and <span class="mono">createContractExecutionTransaction</span> handled the USDC-as-gas model on their own.</li>
+  <li><strong>Bridge Kit already knew about Arc, and that surprised me.</strong> I expected to add a custom chain. Instead <span class="mono">ArcTestnet</span> was right there in the chain list with CCTP domain 26, so bridging Base Sepolia to Arc was one <span class="mono">kit.bridge()</span> call. Having Arc as a first-class App Kit chain on day one is a real head start for cross-chain agent flows.</li>
   <li><strong>arcscan exact-match verification worked cleanly</strong> once I pinned <span class="mono">evm_version</span> to <span class="mono">cancun</span>. A one-line note in the docs would have saved me the trial and error.</li>
-  <li><strong>Bridge Kit already knew about Arc, and that surprised me.</strong> I expected to have to add a custom chain. Instead <span class="mono">ArcTestnet</span> was right there in the chain list with CCTP domain 26, so bridging Base Sepolia to Arc was a single <span class="mono">kit.bridge()</span> call. Having Arc as a first-class chain in the App Kit SDK on day one is a big deal for anyone building cross-chain agent flows.</li>
   <li><strong>The ERC-8004 ReputationRegistry feedback index is 1-based, not 0-based.</strong> My first <span class="mono">readFeedback(agentId, client, 0)</span> reverted with "index must be > 0", which cost me a re-run before I clocked it. A line in the docs, or a 0-based convention to match every other array in the EVM, would avoid it.</li>
 </ul>
 
