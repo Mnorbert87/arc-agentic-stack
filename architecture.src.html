@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<!-- Source for architecture.png. Render: headless Chrome --screenshot, window 1600x1040, scale 2 -> 3200x2080. -->
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#060912; --ink:#eef3fb; --muted:#9aa6bd; --faint:#5a6680;
+    --line:rgba(255,255,255,.07); --line2:rgba(122,170,255,.22);
+    --glass:rgba(255,255,255,.025); --glass2:rgba(255,255,255,.05);
+    --c1:#4da2ff; --c2:#56cfe1; --c3:#2f6bff; --bad:#ff7a7a; --warn:#ffc266; --good:#4fd6a8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{width:1600px;height:1040px;background:var(--bg);color:var(--ink);
+    font-family:"Inter",system-ui,sans-serif;overflow:hidden;position:relative}
+  .aurora{position:absolute;inset:0;z-index:0;
+    background:
+      radial-gradient(1200px 640px at 50% -12%,rgba(77,162,255,.20),transparent 60%),
+      radial-gradient(900px 600px at 90% 115%,rgba(255,122,122,.10),transparent 62%),
+      radial-gradient(760px 560px at 6% 60%,rgba(86,207,225,.12),transparent 60%),
+      var(--bg);}
+  .grid-bg{position:absolute;inset:0;z-index:0;opacity:.5;
+    background-image:linear-gradient(rgba(122,170,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(122,170,255,.045) 1px,transparent 1px);
+    background-size:54px 54px;-webkit-mask-image:radial-gradient(circle at 50% 32%,#000,transparent 78%);}
+  .wrap{position:relative;z-index:2;padding:38px 56px}
+
+  header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:26px}
+  .brand{display:flex;align-items:center;gap:16px}
+  .logo{width:54px;height:54px;border-radius:15px;background:linear-gradient(135deg,var(--c1),var(--c2));
+    display:grid;place-items:center;box-shadow:0 10px 30px rgba(91,140,255,.5),inset 0 0 0 1px rgba(255,255,255,.25)}
+  .logo svg{width:28px;height:28px}
+  h1{font-family:"Space Grotesk";font-size:30px;letter-spacing:-.6px;font-weight:700;line-height:1.05;
+    background:linear-gradient(110deg,#fff 10%,var(--c2) 46%,var(--c1) 70%,#fff 95%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .brand small{display:block;color:var(--muted);font-size:14.5px;margin-top:5px;letter-spacing:.1px}
+  .track{font-family:"Space Grotesk";font-size:12.5px;letter-spacing:2.4px;text-transform:uppercase;color:var(--c2);
+    border:1px solid var(--line2);border-radius:999px;padding:9px 17px;background:var(--glass)}
+
+  .stage{display:grid;grid-template-columns:300px 1fr 300px;gap:30px;align-items:stretch}
+
+  .actor{background:linear-gradient(180deg,var(--glass2),var(--glass));border:1px solid var(--line);border-radius:20px;
+    padding:24px 22px;position:relative;display:flex;flex-direction:column;gap:12px;justify-content:center}
+  .actor::before{content:"";position:absolute;inset:0 0 auto 0;height:1px;background:linear-gradient(90deg,transparent,var(--line2),transparent)}
+  .actor .ic{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;
+    background:linear-gradient(135deg,rgba(77,162,255,.22),rgba(86,207,225,.14));border:1px solid var(--line2)}
+  .actor .ic svg{width:24px;height:24px;stroke:var(--c2)}
+  .actor h3{font-family:"Space Grotesk";font-size:20px;font-weight:600;letter-spacing:-.2px}
+  .actor p{color:var(--muted);font-size:13.5px;line-height:1.6}
+
+  .layers{display:flex;flex-direction:column;gap:18px}
+  .layer{position:relative;border-radius:20px;padding:22px 24px;overflow:hidden;
+    background:linear-gradient(180deg,var(--glass2),var(--glass));border:1px solid var(--line)}
+  .layer::before{content:"";position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.8}
+  .layer::after{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,var(--accent),transparent)}
+  .lhead{display:flex;align-items:center;gap:13px;margin-bottom:9px}
+  .lbadge{font-family:"Space Grotesk";font-size:11.5px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);
+    border:1px solid var(--accent-line);border-radius:999px;padding:6px 13px;background:rgba(255,255,255,.02);white-space:nowrap}
+  .lhead h2{font-family:"Space Grotesk";font-size:25px;font-weight:700;letter-spacing:-.4px}
+  .lhead .q{margin-left:auto;color:var(--muted);font-size:13.5px;font-style:italic;text-align:right}
+  .ldesc{color:var(--muted);font-size:13.5px;line-height:1.62;max-width:760px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .chip{font-family:"JetBrains Mono",monospace;font-size:12.5px;color:var(--ink);
+    border:1px solid var(--line2);border-radius:9px;padding:6px 11px;background:rgba(0,0,0,.25)}
+  .chip.hot{color:var(--bad);border-color:rgba(255,122,122,.45);background:rgba(255,122,122,.06)}
+
+  .trust{--accent:var(--c1);--accent-line:rgba(77,162,255,.5)}
+  .settle{--accent:var(--c2);--accent-line:rgba(86,207,225,.5)}
+  .mech{--accent:var(--warn);--accent-line:rgba(255,194,102,.5)}
+  .mech{border-color:rgba(255,194,102,.28);box-shadow:0 18px 50px rgba(0,0,0,.34),0 0 0 1px rgba(255,194,102,.10)}
+
+  /* composition: CommitStakeV2 drives the two primitives above it */
+  .compose{display:flex;gap:12px;margin-top:15px;flex-wrap:wrap}
+  .comp{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--ink);
+    border:1px dashed var(--accent-line);border-radius:11px;padding:8px 13px;background:rgba(255,194,102,.04)}
+  .comp b{font-family:"Space Grotesk";font-weight:600}
+  .comp .arr{color:var(--warn);font-weight:700}
+  .comp .tgt{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--c2)}
+  .comp .tgt.blue{color:var(--c1)}
+
+  /* connector labels inside the agent / counterparty cards */
+  .flow{font-family:"JetBrains Mono",monospace;font-size:12.5px;color:var(--faint);
+    display:flex;align-items:center;gap:6px}
+  .flow .dot{color:var(--c2)}
+
+  .base{margin-top:22px;border-radius:18px;padding:20px 26px;display:flex;align-items:center;gap:22px;
+    background:linear-gradient(100deg,rgba(47,107,255,.14),rgba(86,207,225,.08));border:1px solid var(--line2);position:relative;overflow:hidden}
+  .base .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,var(--c1),var(--c2));flex:0 0 auto}
+  .base .ic svg{width:24px;height:24px}
+  .base h3{font-family:"Space Grotesk";font-size:20px;font-weight:700;letter-spacing:-.2px}
+  .base p{color:var(--muted);font-size:13px;line-height:1.55;margin-top:2px;max-width:920px}
+  .base .tags{margin-left:auto;display:flex;gap:8px;flex:0 0 auto}
+  .base .tags span{font-size:12px;color:var(--c2);border:1px solid var(--line2);border-radius:999px;padding:6px 13px;background:rgba(255,255,255,.03);white-space:nowrap}
+
+  .foot{display:flex;justify-content:space-between;align-items:center;margin-top:18px;color:var(--faint);font-size:12.5px}
+  .foot code{font-family:"JetBrains Mono",monospace;color:var(--muted)}
+  .foot .ownerless{color:var(--good)}
+</style>
+</head>
+<body>
+<div class="aurora"></div><div class="grid-bg"></div>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2L3 20h4l5-10 5 10h4L12 2z" fill="#04111f"/></svg></div>
+      <div>
+        <h1>Arc Agentic Stack — Architecture</h1>
+        <small>Three composable USDC primitives for autonomous agents — trust, settlement, and the mechanism that binds them. Everything settles on Arc, where USDC is gas.</small>
+      </div>
+    </div>
+    <div class="track">Track 4 · Agentic Economy</div>
+  </header>
+
+  <div class="stage">
+    <!-- LEFT: agent -->
+    <div class="actor">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></div>
+      <h3>AI Agent</h3>
+      <p>Autonomous worker. Posts a bond to prove it is trustworthy, earns USDC by the second as it works, and is held to its word by a slashable obligation. Keys held in Circle Wallets.</p>
+      <div class="flow" style="margin-top:4px;color:var(--c1)"><span class="dot">→</span> bond up · stream in</div>
+    </div>
+
+    <!-- CENTER: three layers -->
+    <div class="layers">
+      <div class="layer trust">
+        <div class="lhead"><span class="lbadge">Trust layer</span><h2>AgentBond</h2><div class="q">"Can I trust this agent<br>before it acts?"</div></div>
+        <p class="ldesc">USDC collateral behind an agent's reputation. The agent grants enforcers a slash allowance; counterparties lock a slice of the <i>free</i> bond behind a job, then release on performance or slash on default. Ownerless, balance-delta accounting — the free bond is a public, slashable credit score.</p>
+        <div class="chips"><span class="chip">setSlashAllowance</span><span class="chip">lock</span><span class="chip">release</span><span class="chip">slash</span><span class="chip">freeBondOf</span></div>
+      </div>
+
+      <div class="layer settle">
+        <div class="lhead"><span class="lbadge">Settlement layer</span><h2>StreamPay</h2><div class="q">"Can I pay per second<br>of work, not per invoice?"</div></div>
+        <p class="ldesc">USDC that accrues linearly, by the second. Pay-per-call, per-task or per-second subscriptions. The recipient withdraws what has vested; the sender cancels and reclaims the unvested remainder. No invoices, no chargebacks.</p>
+        <div class="chips"><span class="chip">createStream</span><span class="chip">streamedTotal(t)</span><span class="chip">withdraw</span><span class="chip">cancel</span></div>
+      </div>
+
+      <div class="layer mech">
+        <div class="lhead"><span class="lbadge">Mechanism layer</span><h2>CommitStakeV2</h2><div class="q">"Who pays when<br>the verifier lies?"</div></div>
+        <p class="ldesc">A <b>bonded verifier</b> escrow. A staker commits USDC behind a goal; the verifier attests pass/fail. A two-sided challenge routes to a named arbiter — on an overturn or a no-show the verifier's bonded slice is <b>slashed</b>, the harmed party gets only <b>damage</b>, and the §7a surplus is <b>burned to 0x…dEaD</b>. Writes zero new custody code — it drives the two primitives above.</p>
+        <div class="chips"><span class="chip">commit</span><span class="chip">attest</span><span class="chip">overturn</span><span class="chip">slash</span><span class="chip hot">burn → 0x…dEaD</span></div>
+        <div class="compose">
+          <div class="comp"><b>composes</b> <span class="arr">↑</span> <span class="tgt blue">AgentBond.slash</span> <span style="color:var(--faint)">· §7a routing</span></div>
+          <div class="comp"><b>composes</b> <span class="arr">↑</span> <span class="tgt">StreamPay.createStream</span> <span style="color:var(--faint)">· verifier fee</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: counterparty -->
+    <div class="actor">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
+      <h3>Counterparty</h3>
+      <p>Business or protocol hiring the agent. Reads the bond to gauge trust, locks collateral against the job, streams payment per second of work delivered — and can stake a goal whose verdict is itself bonded.</p>
+      <div class="flow" style="margin-top:4px;color:var(--c2)"><span class="dot">←</span> read trust · lock · pay</div>
+    </div>
+  </div>
+
+  <!-- BASE: Arc L1 -->
+  <div class="base">
+    <div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2L3 20h4l5-10 5 10h4L12 2z" fill="#04111f"/></svg></div>
+    <div>
+      <h3>Arc L1 · USDC = gas</h3>
+      <p>Deterministic finality, dollar-denominated fees. The agent budgets, pays gas, posts bond and gets paid in one unit — no FX, no native-token juggling, no bridges in the trust path.</p>
+    </div>
+    <div class="tags"><span>USDC</span><span>Deterministic finality</span><span>Ownerless</span></div>
+  </div>
+
+  <div class="foot">
+    <div>AgentBond <code>0xB9b4…f8e0</code> &nbsp;·&nbsp; StreamPay <code>0x5057…2450</code> &nbsp;·&nbsp; CommitStakeV2 <code>0x1f1C…8CA9</code></div>
+    <div class="ownerless">No owner · no admin keys · balance-delta solvent · Arc testnet (chain 5042002)</div>
+  </div>
+</div>
+</body>
+</html>
