@@ -139,6 +139,14 @@ hosted metadata (name, type, capabilities, version):
 | **Aiden** (AI research service agent) | `471762` | [`aiden.json`](https://mnorbert87.github.io/arc-agentic-stack/agents/aiden.json) | [`0x8afedd…8cfa2`](https://testnet.arcscan.app/tx/0x8afedd30f718a82752811f6daab1c41d81e215eb0020e4eca76db0379888cfa2) |
 | **Arc Stack Verifier** (bonded verifier) | `471763` | [`verifier.json`](https://mnorbert87.github.io/arc-agentic-stack/agents/verifier.json) | [`0xe2eb9b…cdae`](https://testnet.arcscan.app/tx/0xe2eb9b94cd1d4afe292f1bf9d4b859b122c96d6ca8f4a49a8d88c78bf86bcdae) |
 
+The full ERC-8004 surface is exercised on-chain, not just `register`:
+- **Reputation** — a counterparty left a real **`ReputationRegistry.giveFeedback`** for Aiden
+  (value `5`, tags `research-quality` / `on-time-delivery`), from a *distinct* address (self-feedback
+  is not the point): [`0x775a67…5884`](https://testnet.arcscan.app/tx/0x775a67b9d30017d3c60c43c2b82b5a491ae9a45222c8a6de3fe23c6f195f5884). `readFeedback` returns it on-chain.
+- **Operational wallet** — Aiden's identity binds a separate operational wallet via
+  **`IdentityRegistry.setAgentWallet`** (EIP-712 signed by that wallet, owner submits):
+  [`0x2910b8…4344`](https://testnet.arcscan.app/tx/0x2910b8d8eaee2cd5c6270a5348d1b7e7e79499d03c752d4f8554d0ba53084344) — `getAgentWallet(471762)` now resolves to the bound key, so custody (the NFT owner) and execution (the agent wallet) are cleanly separated.
+
 **Why this matters — we complement ERC-8004, we don't duplicate it.** ERC-8004 (and the related
 job/validation work) is the **identity and job-coordination layer**: it answers *"which agent is
 this, and what did it agree to do?"* It does **not** answer *"what happens, economically, when the
