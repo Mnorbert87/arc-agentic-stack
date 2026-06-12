@@ -1,0 +1,19 @@
+{
+  "name": "cctp-capital-onboarding",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Cross-chain capital onboarding for agents — Circle App Kit (Bridge Kit, CCTP V2) Base Sepolia -> Arc -> AgentBond",
+  "scripts": {
+    "onboard": "tsx bridge-onboard.ts"
+  },
+  "dependencies": {
+    "@circle-fin/bridge-kit": "^1.10.2",
+    "@circle-fin/adapter-viem-v2": "^1.10.2",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

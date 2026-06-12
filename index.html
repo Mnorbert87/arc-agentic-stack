@@ -325,12 +325,14 @@
         <span>USDC</span>
         <span>Arc L1 (USDC gas)</span>
         <span>Circle Wallets</span>
+        <span>CCTP V2 · Bridge Kit</span>
         <span class="muted">Nanopayments *</span>
       </div>
       <ul>
         <li><span class="ck">◆</span><span><b>USDC</b> — the settlement rail for both bonds and streams. All value in the stack is USDC.</span></li>
         <li><span class="ck">◆</span><span><b>Arc</b> — deterministic finality and USDC-denominated fees let an agent budget, pay gas, and settle in one unit.</span></li>
         <li><span class="ck">◆</span><span><b>Circle Wallets</b> — <b>live.</b> The agent signs its Arc transactions through a Circle Developer-Controlled Wallet — no private key on disk touches the chain. A full lifecycle (<a href="https://testnet.arcscan.app/tx/0x05349563271e35e9b79d66116cd5d84ca65cff8032bce41fa937ff29dca8be03" style="color:var(--muted);">approve</a> → <a href="https://testnet.arcscan.app/tx/0x59a8a0d095ca745ee2f37f0abfcdc631852707ced7d8e8a1128ebd42f09220ab" style="color:var(--muted);">bond</a> → <a href="https://testnet.arcscan.app/tx/0x2f96d176d5904278806259cd4b96a38d1f0550e078fc953878028bb7b55d7302" style="color:var(--muted);">stream</a>) was signed by Circle wallet <code>0xdFDa…F46b</code> on Arc Testnet.</span></li>
+        <li><span class="ck">◆</span><span><b>CCTP V2 + Bridge Kit</b> — <b>live.</b> An agent's bond capital is bridged <b>Base Sepolia → Arc</b> with Circle's Bridge Kit (App Kit, CCTP V2) and deposited into AgentBond — Arc is a native Bridge-Kit chain (domain 26). Verified: <a href="https://sepolia.basescan.org/tx/0x6232b181d8f3234162f8d617ba5a5215b62eb9c902e5f70b0f6312cb0e8725d8" style="color:var(--muted);">burn</a> → <a href="https://testnet.arcscan.app/tx/0xcae2649abaee2544144a7cedc73b38915ef62d2fce545b566168f30735326d2b" style="color:var(--muted);">mint</a> → <a href="https://testnet.arcscan.app/tx/0xf17ca3a4004b8b969cdb633d1d7f42703a7618f34a56092fc1e9b82eba5f96bc" style="color:var(--muted);">bond</a>.</span></li>
         <li><span class="ck">◆</span><span><b>Nanopayments *</b> — a natural fit for sub-cent, high-frequency stream withdrawals at scale (architecture-level).</span></li>
       </ul>
       <p style="font-size:11.5px; color:var(--faint); margin:14px 0 0;">* Integrated at the architecture level for this testnet demo; the live contracts use USDC on Arc directly.</p>

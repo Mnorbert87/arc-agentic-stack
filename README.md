@@ -26,6 +26,7 @@ trust-and-pay rail for autonomous agents.
 - **AgentBond:** https://mnorbert87.github.io/arc-agentic-stack/agent-bond/
 - **StreamPay:** https://mnorbert87.github.io/arc-agentic-stack/stream-pay/
 - **x402 pay-per-call demo (runnable):** [`x402-demo/`](./x402-demo/) — agent pays an API over HTTP `402`, settled per second on StreamPay. [Verified tx transcript](./x402-demo/SAMPLE_RUN.md).
+- **CCTP capital onboarding (runnable):** [`cctp-demo/`](./cctp-demo/) — an agent's bond capital is bridged **Base Sepolia → Arc** with Circle **Bridge Kit** (App Kit, CCTP V2) and deposited into AgentBond. [Verified tx transcript](./cctp-demo/SAMPLE_RUN.md).
 
 No backend. The frontends read live state straight from the public Arc RPC and write through MetaMask. Wallet not required to browse.
 
@@ -173,9 +174,28 @@ Adversarial analysis — who can attack (malicious verifier, silent verifier, gr
 | **USDC** | The settlement rail for *both* bonds and streams. All value in the stack is USDC. | ✅ Live on testnet |
 | **Arc** | Deterministic finality + USDC-denominated fees let an agent budget, pay gas, post bond and settle in one unit. | ✅ Live on testnet |
 | **Circle Wallets** | Agent-held key management: the agent (Aiden) signs its Arc transactions through a Circle Developer-Controlled Wallet — no private key on disk ever touches the chain. | ✅ Live on testnet |
+| **CCTP V2 + Bridge Kit** | Cross-chain capital onboarding: an agent's bond capital is bridged **Base Sepolia → Arc** with Circle's **Bridge Kit** (App Kit suite, CCTP V2) and deposited into AgentBond — Arc is a first-class Bridge-Kit chain (`ArcTestnet`, domain 26). | ✅ Live on testnet |
 | **Nanopayments** | Pattern demonstrated: `x402` charges per API call and `StreamPay` accrues USDC per second — sub-cent, high-frequency USDC settlement on Arc. (We demo the settlement *pattern*; the Circle Nanopayments product itself is not integrated.) | 🧪 Pattern demonstrated |
 
 USDC, Arc and Circle Wallets transact USDC on Arc directly — there is no off-chain ledger or batching intermediary in the trust-and-pay path.
+
+### CCTP V2 + Bridge Kit — cross-chain capital onboarding
+
+An agent funded on another chain can still post its bond on Arc. [`cctp-demo/`](./cctp-demo/) bridges
+USDC **Base Sepolia → Arc** with Circle's official **Bridge Kit** (`@circle-fin/bridge-kit`, App Kit
+suite) and deposits it straight into AgentBond — one `kit.bridge({ from: 'Base_Sepolia', to:
+'Arc_Testnet', config: { transferSpeed: 'FAST' } })` call, CCTP V2 under the hood. Arc Testnet is a
+native Bridge-Kit chain (chainId `5042002`, CCTP domain `26`). Verified on testnet (1 USDC):
+
+| Step | Chain | Tx |
+|---|---|---|
+| `depositForBurn` | Base Sepolia | [`0x6232b1…25d8`](https://sepolia.basescan.org/tx/0x6232b181d8f3234162f8d617ba5a5215b62eb9c902e5f70b0f6312cb0e8725d8) |
+| `receiveMessage` (mint) | Arc | [`0xcae264…26d2b`](https://testnet.arcscan.app/tx/0xcae2649abaee2544144a7cedc73b38915ef62d2fce545b566168f30735326d2b) |
+| `AgentBond.deposit` | Arc | [`0xf17ca3…96bc`](https://testnet.arcscan.app/tx/0xf17ca3a4004b8b969cdb633d1d7f42703a7618f34a56092fc1e9b82eba5f96bc) |
+
+AgentBond bond `36 → 37 USDC`; the bridged dollar is now slashable collateral. Full transcript:
+[`cctp-demo/SAMPLE_RUN.md`](./cctp-demo/SAMPLE_RUN.md). A raw-CCTP-V2 (no-SDK) reference flow is in
+[`cctp-demo/run.sh`](./cctp-demo/run.sh).
 
 ### Circle Wallets — live agent-signed transactions
 
@@ -300,6 +320,7 @@ arc-agentic-stack/
 ├── agent/                  # Aiden — runs the lifecycle; Circle-Wallet-signed Arc txs
 ├── demo/                   # commerce-scenario.js — runnable end-to-end flow
 ├── x402-demo/              # x402 pay-per-call API, settled per second on StreamPay
+├── cctp-demo/              # cross-chain capital onboarding (Bridge Kit / CCTP V2 → AgentBond)
 └── contracts/              # Foundry projects (src, test, script)
     ├── agent-bond/         # AgentBond — trust primitive
     ├── stream-pay/         # StreamPay — settlement primitive
