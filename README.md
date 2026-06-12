@@ -127,6 +127,41 @@ suite (unit + adversarial + cold-audit + edge + fuzz + 10k-run invariants + symb
 
 ---
 
+## Arc-native agent identity (ERC-8004)
+
+Both demo agents hold a real on-chain identity in Arc's official **ERC-8004 `IdentityRegistry`**
+([`0x8004A818…BD9e`](https://testnet.arcscan.app/address/0x8004A818BFB912233c491871b3d84c89A494BD9e)) —
+`register(metadataURI)` mints an ERC-721 identity NFT whose `tokenURI` resolves to the agent's
+hosted metadata (name, type, capabilities, version):
+
+| Agent | tokenId | metadata | register tx |
+|---|---|---|---|
+| **Aiden** (AI research service agent) | `471762` | [`aiden.json`](https://mnorbert87.github.io/arc-agentic-stack/agents/aiden.json) | [`0x8afedd…8cfa2`](https://testnet.arcscan.app/tx/0x8afedd30f718a82752811f6daab1c41d81e215eb0020e4eca76db0379888cfa2) |
+| **Arc Stack Verifier** (bonded verifier) | `471763` | [`verifier.json`](https://mnorbert87.github.io/arc-agentic-stack/agents/verifier.json) | [`0xe2eb9b…cdae`](https://testnet.arcscan.app/tx/0xe2eb9b94cd1d4afe292f1bf9d4b859b122c96d6ca8f4a49a8d88c78bf86bcdae) |
+
+**Why this matters — we complement ERC-8004, we don't duplicate it.** ERC-8004 (and the related
+job/validation work) is the **identity and job-coordination layer**: it answers *"which agent is
+this, and what did it agree to do?"* It does **not** answer *"what happens, economically, when the
+agent lies or vanishes?"* That economic-assurance layer is exactly what this stack adds: a
+**bonded verifier** (slashable skin-in-the-game), deterministic **§7a slash routing** (damage to
+the harmed party, surplus burned), and **streaming pay** so failure is non-binary. An ERC-8004
+agent gains, on the same chain and the same USDC, the missing layer that makes its attestations
+*cost something to fake*.
+
+**vs. the `circlefin/arc-escrow` sample.** A classic escrow holds funds and releases them on a
+trusted signal. Here the **verifier itself is bonded and slashable** — trusting its verdict reduces
+to trusting an on-chain bond, not a privileged signer — the contracts are **ownerless with no admin
+keys**, and the whole dispute path (slash, burn, refund) is **pure on-chain logic with balance-delta
+accounting**, not an operator pressing "release." It is the difference between an escrow you trust to
+release and a verifier you can *slash*.
+
+This runs where it does because **Arc** gives it the settlement guarantees agentic value transfer
+needs: **sub-second deterministic finality with zero reorgs**, fees of **~$0.01 a transaction**, and
+USDC as the native gas token — so an agent budgets, bonds, streams and settles in one dollar-
+denominated unit, and a slashed bond is final the moment the block lands.
+
+---
+
 ## Design FAQ — anticipated questions
 
 **Who can slash a bond? Can a counterparty just take the money and run?**
@@ -292,6 +327,7 @@ We deliberately built on **USDC + Arc** for the trust path, used **Circle Wallet
 - **Deterministic, dollar-denominated fees.** Budgeting agent actions in USDC instead of a volatile gas token removed an entire class of "did the tx have enough gas" failure handling from our agent logic.
 - **Standard EVM tooling.** Foundry, `ethers`, and MetaMask worked against the Arc Testnet RPC with zero special-casing beyond the chain id (`5042002`) and explorer URL. We shipped two contracts + full adversarial test suites + three frontends with no Arc-specific SDK lock-in.
 - **6-decimal ERC-20 USDC** behaved exactly like USDC elsewhere, so our balance-delta accounting (which keeps the contracts solvent and ownerless) needed no Arc-specific adjustments.
+- **First-class agent tooling on Arc.** CCTP V2 + Bridge Kit list Arc natively (domain 26), the ERC-8004 `IdentityRegistry` is deployed for on-chain agent identity, and the **Arc MCP server** lets an LLM agent query and transact against Arc directly — the surrounding agent infrastructure is already there to build on, not something we had to stand up ourselves.
 
 ### What could be improved
 
